@@ -17,11 +17,11 @@ button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:ho
     background-color: #007bff;
     color: white;
 }
-.schedule-slot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-.remove-slot-button { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
+.schedule-timeslot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+.remove-timeslot-button { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
 #temp_hold_options { display: none; margin-top: 10px; }
 .temp-inputs { display: flex; justify-content: space-between; }
 .temp-inputs input { width: 45%; }
 .schedule-controls { display: flex; align-items: center; margin-bottom: 10px; }
 .schedule-controls select, .schedule-controls label { margin-right: 10px; }
-#add_slot,#clear_schedule,#save_schedule{width:32%;}
+#add_timeslot,#clear_schedule,#save_schedule{width:32%;}

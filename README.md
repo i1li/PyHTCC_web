@@ -5,8 +5,9 @@ A JavaScript web thermostat control built on a minimal Flask server using [PyHTC
 Limitations Addressed: The Honeywell app only alows 4 schedule timeslots, 1 saved schedule, and timeslots can only be in intervals of 15 minutes.
 
 ## Features
-- Unlimited schedule timeslots
-- Save and choose from multiple schedules
+- Unlimited schedule timeslots with 1 minute increments
+- Save & choose from multiple schedules
+- Import & export saved schedules
 - Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
 - [Cycle Range](#what-is-cycle-range)
 
@@ -21,7 +22,7 @@ pip install -r requirements.txt
 Update the `.env` file with the credentials you use for your Honeywell app or their web portal at [mytotalconnectcomfort.com](https://mytotalconnectcomfort.com/).
 
 ### Run the Application
-Run `pyhtcc_web.py`, then open a browser window to `localhost:5001`.
+Run `pyhtcc_web.py`, then open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory.
 
 
 ## What is Cycle Range?

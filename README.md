@@ -1,4 +1,4 @@
-# PyHTCC_web
+### PyHTCC_web
 
 A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats.
 
@@ -24,7 +24,6 @@ Update the `.env` file with the credentials you use for your Honeywell app or th
 ### Run the Application
 Run `pyhtcc_web.py`, then open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory.
 
-
 ## What is Cycle Range?
 Cycle Range is the amount of degrees away from the setpoint allowed while in rest between cycles before starting another cycle of cooling/heating to setpoint. 
 
@@ -43,20 +42,20 @@ This means:
 - When the mode is **heat**, `restTemp` is the setpoint minus the cycleRange.
 
 ### State Transitions
-The transitions in the `runCycleRange` function are based on updates of `lastStatusData.running` and whether it is switching states while reaching or departing from the setpoint or rest temperature.
+The transitions in the `runCycleRange` function are based on updates of `running` and whether it is switching states while reaching or departing from the setpoint or rest temperature.
 
 1. **For Cooling Mode:**
-   - The system enters the resting state when `lastStatusData.running` changes from true to false while the current temperature is at or below the setpoint.
+   - The system enters the resting state when `running` changes from true to false while the current temperature is at or below the setpoint.
    - It exits the resting state and starts cooling again when the current temperature reaches or exceeds the rest temperature.
 
 2. **For Heating Mode:**
-   - The system enters the resting state when `lastStatusData.running` changes from true to false while the current temperature is at or above the setpoint.
+   - The system enters the resting state when `running` changes from true to false while the current temperature is at or above the setpoint.
    - It exits the resting state and starts heating again when the current temperature drops to or below the rest temperature.
 
 ### Variable Updates
 The `isResting` and `restingSince` variables should be updated as follows:
-- **isResting** is set to `true` when entering the resting state (when `lastStatusData.running` becomes false at the appropriate temperature).
+- **isResting** is set to `true` when entering the resting state (when `running` becomes false at the appropriate temperature).
 - **restingSince** is set to the current time (`Date.now()`) when entering the resting state.
 - Both are reset (`isResting` to `false` and `restingSince` to `null`) when exiting the resting state.
 
-These transitions are dependent on both the `lastStatusData.running` state and temperature conditions, ensuring that the system cycles appropriately based on its actual running state and current temperature in relation to both setpoint and rest temperature.
+These transitions are dependent on both the `running` state and temperature conditions, ensuring that the system cycles appropriately based on its actual running state and current temperature in relation to both setpoint and rest temperature.

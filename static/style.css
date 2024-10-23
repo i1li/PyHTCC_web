@@ -1,0 +1,27 @@
+body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+label, input, select { display: inline-block; margin: 5px 0; }
+button { margin: 10px 0; padding: 10px; width: 100%; }
+button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:hover {cursor: pointer; text-decoration: underline;}
+#status { margin-top: 20px; padding: 10px; }
+.mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
+.mode-option, .hold-option { width: 30%; }
+.mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }
+.mode-option label, .hold-option label {
+    display: block;
+    text-align: center;
+    padding: 10px 0;
+    cursor: pointer;
+    border-radius: 5px;
+}
+.mode-option input[type="radio"]:checked + label, .hold-option input[type="radio"]:checked + label {
+    background-color: #007bff;
+    color: white;
+}
+.schedule-slot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+.remove-slot-button { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
+#temp_hold_options { display: none; margin-top: 10px; }
+.temp-inputs { display: flex; justify-content: space-between; }
+.temp-inputs input { width: 45%; }
+.schedule-controls { display: flex; align-items: center; margin-bottom: 10px; }
+.schedule-controls select, .schedule-controls label { margin-right: 10px; }
+#add_slot,#clear_schedule,#save_schedule{width:32%;}

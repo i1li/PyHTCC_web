@@ -3,8 +3,8 @@ from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import os
 import time
-load_dotenv()
 app = Flask(__name__, static_folder='static', static_url_path='/static')
+load_dotenv()
 username = os.getenv('PYHTCC_EMAIL')
 password = os.getenv('PYHTCC_PASS')
 print("Username:", username, "   Password set:", bool(password))
@@ -30,10 +30,19 @@ def read_thermostat(zone_name):
         setpoint = heat_setpoint if system_mode == 1 else cool_setpoint if system_mode == 3 else 'off'
         return current_temp, setpoint, mode, running
     return None, None, None, None
+def set_thermostat(zone_name, setpoint, mode):
+    try:
+        zone = p.get_zone_by_name(zone_name)
+        if mode == 'cool':
+            zone.set_permanent_cool_setpoint(setpoint)
+        elif mode == 'heat':
+            zone.set_permanent_heat_setpoint(setpoint)
+    except Exception as e:
+        print(f"Error: {e}")
 last_update = None
 last_update_confirmation = None
-@app.route('/status')
-def status():
+@app.route('/get_status')
+def get_status():
     global last_update, last_update_confirmation
     current_temp, setpoint, mode, running = read_thermostat(zone['Name'])
     status_data = {
@@ -56,17 +65,8 @@ def status():
         else:
             last_update = None
     return jsonify(status_data)
-def set_thermostat(zone_name, setpoint, mode):
-    try:
-        zone = p.get_zone_by_name(zone_name)
-        if mode == 'cool':
-            zone.set_permanent_cool_setpoint(setpoint)
-        elif mode == 'heat':
-            zone.set_permanent_heat_setpoint(setpoint)
-    except Exception as e:
-        print(f"Error: {e}")
-@app.route('/update', methods=['POST'])
-def update():
+@app.route('/set_update', methods=['POST'])
+def set_update():
     global last_update
     new_setpoint = float(request.form['setpoint'])
     new_mode = request.form['mode']

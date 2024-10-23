@@ -380,14 +380,14 @@ function runCycleRange() {
     }
 }
 function setThermostat(setpoint, isCooling) {
-    $.post('/update', {
+    $.post('/set_update', {
         mode: isCooling ? 'cool' : 'heat',
         setpoint: setpoint,
     });
 }
 function updateStatus() {
     lastUpdateTime = Date.now();
-    $.get('/status', function(data) {
+    $.get('/get_status', function(data) {
         lastStatusData = data;
         if (holdType === 'schedule') {
             const scheduledTemp = getScheduledTemp();

@@ -2,6 +2,15 @@
 
 A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats.
 
+Limitations Addressed: The Honeywell app only alows 4 schedule timeslots, 1 saved schedule, and timeslots can only be in intervals of 15 minutes.
+
+## Features
+- Unlimited schedule timeslots
+- Save and choose from multiple schedules
+- Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
+- [Cycle Range](#what-is-cycle-range)
+
+
 ## Getting Started
 
 ### Install Requirements
@@ -15,11 +24,6 @@ Update the `.env` file with the credentials you use for your Honeywell app or th
 ### Run the Application
 Run `pyhtcc_web.py`, then open a browser window to `localhost:5001`.
 
-## Features
-- Unlimited schedule time slots
-- Save and choose from multiple schedules
-- Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
-- Cycle range
 
 ## What is Cycle Range?
 Cycle Range is the amount of degrees away from the setpoint allowed while in rest between cycles before starting another cycle of cooling/heating to setpoint. 

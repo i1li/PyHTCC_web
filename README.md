@@ -10,7 +10,6 @@ Limitations Addressed: The Honeywell app only alows 4 schedule timeslots, 1 save
 - Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
 - [Cycle Range](#what-is-cycle-range)
 
-
 ## Getting Started
 
 ### Install Requirements
@@ -31,7 +30,7 @@ Cycle Range is the amount of degrees away from the setpoint allowed while in res
 - Optional field: leave this value blank or `0` for default behavior.
 - Useful to reduce frequent on/off cycles, especially when the output of the unit is high relative to the space controlled.
 
-The system will cool/heat until reaching the setpoint, and then rests until the temperature reaches the set temperature plus (or minus in the case of heat) the Cycle Range.
+This is basically the same as the HVAC term "deadband", with the only difference being that deadband is split evenly in both directions of the setpoint, while Cycle Range applies directionally based on cool or heat mode. The system will cool/heat until reaching the setpoint, and then rests until the temperature reaches the set temperature plus (or minus in the case of heat) the Cycle Range.
 
 ### Code Explanation
 The `runCycleRange` function uses `restTemp`, encapsulated in the following line of code:

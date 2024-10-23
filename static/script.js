@@ -124,7 +124,7 @@ $(document).ready(function() {
         const newTimeslot = `
         <div class="schedule-timeslot">
             <input type="time" value="${timeslot.time || ''}">
-            <button class="remove-timeslot">Remove Timetimeslot</button><br>
+            <button class="remove-timeslot">Remove Timeslot</button><br>
             <label for="heat_temp">Heat Temp:</label>
             <input type="number" placeholder="Heat Temp" value="${timeslot.heatTemp || ''}">
             <label for="cool_temp">Cool Temp:</label>
@@ -208,7 +208,7 @@ let resting = false;
 let restingSince = null;
 let runningSince = null;
 let setpointSince = null; 
-const minRunTime = 600000;
+const minSetpointRunTime = 600000;
 function setNextScheduledTime() {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -346,13 +346,13 @@ function updateRestState(isCooling, restTemp) {
         setpointSince = null; 
     }
 }
-function runCoolCycle(currentTemp, running, setpoint, restTemp) {
+function runCool(currentTemp, running, setpoint, restTemp) {
     if (!resting) {
         if (running && currentTemp <= setpoint) {
             if (setpointSince === null) {
                 setpointSince = Date.now(); 
             }
-            if (Date.now() - setpointSince >= minRunTime) {
+            if (Date.now() - setpointSince >= minSetpointRunTime) {
                 updateRestState(true, restTemp);
             }
         } else {
@@ -367,13 +367,13 @@ function runCoolCycle(currentTemp, running, setpoint, restTemp) {
         }
     }
 }
-function runHeatCycle(currentTemp, running, setpoint, restTemp) {
+function runHeat(currentTemp, running, setpoint, restTemp) {
     if (!resting) {
         if (running && currentTemp >= setpoint) {
             if (setpointSince === null) {
                 setpointSince = Date.now(); 
             }
-            if (Date.now() - setpointSince >= minRunTime) {
+            if (Date.now() - setpointSince >= minSetpointRunTime) {
                 updateRestState(false, restTemp);
             }
         } else {
@@ -406,9 +406,9 @@ function runCycleRange() {
     if (currentTemp !== null) {
         restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
         if (mode === 'cool') {
-            runCoolCycle(currentTemp, running, setpoint, restTemp);
+            runCool(currentTemp, running, setpoint, restTemp);
         } else if (mode === 'heat') {
-            runHeatCycle(currentTemp, running, setpoint, restTemp);
+            runHeat(currentTemp, running, setpoint, restTemp);
         }
     }
 }

@@ -36,8 +36,6 @@ $(document).ready(function() {
             alert('No schedules found to export.');
         }
     });
-    updateHoldType();
-    cycleRange = $('#cycle_range').val();
     function loadScheduleList() {
         const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
         const $loadSelect = $('#load_schedule');
@@ -93,22 +91,15 @@ $(document).ready(function() {
         localStorage.setItem('currentSchedule', JSON.stringify({ timeslots: schedule }));
         updateHoldType();
     } 
-    $('input[name="hold"]').change(function() {
-        updateHoldType();
-        if (holdType === 'schedule') {
-            const scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(scheduledTemp);
-        }
-    });      
-    $('#cycle_range').change(function() {
-        cycleRange = $(this).val();
-    });    
     $('#submit').click(function() {
+        updateHoldType();
+        cycleRange = $('#cycle_range').val();
         const mode = $('input[name="mode"]:checked').val();
         let setpoint;
         updateHoldType();
         if (holdType === 'schedule') {
             setpoint = getScheduledTemp();
+            $('#setpoint').val(scheduledTemp);
         } else if (holdType === 'temporary') {
             holdUntilTime = $('#hold_until_time').val();
             setpoint = $('#setpoint').val();
@@ -118,7 +109,7 @@ $(document).ready(function() {
         if (!setpoint) {
             setpoint = $('#setpoint').val();
         }
-        setThermostat(setpoint, mode === 'cool');
+        setThermostat(setpoint, mode);
     });
     function addTimeslot(timeslot = {}) {
         const newTimeslot = `
@@ -179,8 +170,7 @@ $(document).ready(function() {
         if (holdType === 'schedule') {
             const scheduledTemp = getScheduledTemp();
             $('#setpoint').val(scheduledTemp);
-            const mode = $('input[name="mode"]:checked').val();
-            setThermostat(scheduledTemp, mode === 'cool');
+            setThermostat(scheduledTemp, mode);
         } else if (holdType === 'temporary') {
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
@@ -200,12 +190,15 @@ let lastUpdateTime = 0;
 let latestReading = null;
 let cycleRange;
 let currentScheduleName = '';
+let scheduledTemp;
 let timeslotCount = 0;
+let mode = 'cool';
 let holdType = null;
 let holdUntilTime = null;
 let restTemp = null;
 let resting = false;
 let restingSince = null;
+let running = false;
 let runningSince = null;
 let setpointSince = null; 
 const minSetpointRunTime = 600000;
@@ -308,38 +301,42 @@ function getScheduledTemp() {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
     const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
-    const mode = $('input[name="mode"]:checked').val();
     for (let i = sortedSchedule.length - 1; i >= 0; i--) {
         if (sortedSchedule[i].time <= currentTime) {
             if (mode === 'cool' && sortedSchedule[i].coolTemp) {
-                return parseFloat(sortedSchedule[i].coolTemp);
+                scheduledTemp = parseFloat(sortedSchedule[i].coolTemp);
+                return;
             } else if (mode === 'heat' && sortedSchedule[i].heatTemp) {
-                return parseFloat(sortedSchedule[i].heatTemp);
+                scheduledTemp = parseFloat(sortedSchedule[i].heatTemp);
+                return;
             }
         }
     }
     if (sortedSchedule.length > 0) {
         const lastTimeslot = sortedSchedule[sortedSchedule.length - 1];
         if (mode === 'cool' && lastTimeslot.coolTemp) {
-            return parseFloat(lastTimeslot.coolTemp);
+            scheduledTemp = parseFloat(lastTimeslot.coolTemp);
         } else if (mode === 'heat' && lastTimeslot.heatTemp) {
-            return parseFloat(lastTimeslot.heatTemp);
+            scheduledTemp = parseFloat(lastTimeslot.heatTemp);
+        } else {
+            scheduledTemp = parseFloat($('#setpoint').val());
         }
+    } else {
+        scheduledTemp = parseFloat($('#setpoint').val());
     }
-    return parseFloat($('#setpoint').val());
 }
-function updateRunState(isCooling, setpoint) {
+function updateRunState(mode, setpoint) {
     if (resting) { 
-        setThermostat(setpoint, isCooling);
+        setThermostat(setpoint, mode);
         resting = false;
         restingSince = null;
         runningSince = Date.now(); 
         setpointSince = null; 
     }
 }
-function updateRestState(isCooling, restTemp) {
+function updateRestState(mode, restTemp) {
     if (!resting) { 
-        setThermostat(restTemp, isCooling);
+        setThermostat(restTemp, mode);
         resting = true;
         restingSince = Date.now(); 
         runningSince = null;
@@ -353,17 +350,17 @@ function runCool(currentTemp, running, setpoint, restTemp) {
                 setpointSince = Date.now(); 
             }
             if (Date.now() - setpointSince >= minSetpointRunTime) {
-                updateRestState(true, restTemp);
+                updateRestState('cool', restTemp);
             }
         } else {
             setpointSince = null; 
             if (currentTemp >= restTemp) {
-                updateRunState(true, setpoint);
+                updateRunState('cool', setpoint);
             }
         }
     } else {
         if (currentTemp >= restTemp) {
-            updateRunState(true, setpoint);
+            updateRunState('cool', setpoint);
         }
     }
 }
@@ -374,17 +371,17 @@ function runHeat(currentTemp, running, setpoint, restTemp) {
                 setpointSince = Date.now(); 
             }
             if (Date.now() - setpointSince >= minSetpointRunTime) {
-                updateRestState(false, restTemp);
+                updateRestState('heat', restTemp);
             }
         } else {
             setpointSince = null; 
             if (currentTemp <= restTemp) {
-                updateRunState(false, setpoint);
+                updateRunState('heat', setpoint);
             }
         }
     } else {
         if (currentTemp <= restTemp) {
-            updateRunState(false, setpoint);
+            updateRunState('heat', setpoint);
         }
     }
 }
@@ -392,11 +389,7 @@ function runCycleRange() {
     if (!latestReading) {
         return;
     }
-    const currentTemp = latestReading.current_temp;
-    const running = latestReading.running;
     const scheduledTemp = getScheduledTemp();
-    const mode = $('input[name="mode"]:checked').val();
-    const cycleRange = parseFloat($('#cycle_range').val());
     let setpoint;
     if (holdType === 'schedule') {
         setpoint = scheduledTemp;
@@ -404,7 +397,6 @@ function runCycleRange() {
         setpoint = parseFloat($('#setpoint').val());
     }
     if (currentTemp !== null) {
-        restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
         if (mode === 'cool') {
             runCool(currentTemp, running, setpoint, restTemp);
         } else if (mode === 'heat') {
@@ -412,9 +404,9 @@ function runCycleRange() {
         }
     }
 }
-function setThermostat(setpoint, isCooling) {
+function setThermostat(setpoint, mode) {
     $.post('/set_update', {
-        mode: isCooling ? 'cool' : 'heat',
+        mode: mode,
         setpoint: setpoint,
     });
 }
@@ -422,17 +414,22 @@ function updateStatus() {
     lastUpdateTime = Date.now();
     $.get('/get_status', function(data) {
         latestReading = data;
+        running = data.running;
+        currentTemp = data.current_temp;
+        restTemp = mode === 'cool' ? 
+        parseFloat(data.setpoint) + parseFloat(cycleRange) : 
+        parseFloat(data.setpoint) - parseFloat(cycleRange);
         if (holdType === 'schedule') {
             const scheduledTemp = getScheduledTemp();
             $('#setpoint').val(scheduledTemp);
         }
         $('#status').html(`
             Mode: ${data.mode}<br>
-            Current Temp: ${data.current_temp}°F<br>
+            Current Temp: ${currentTemp}°F<br>
             Set Temp: ${data.setpoint}°F<br>
             Cycle Range: ${cycleRange}°F<br>
             Rest Temp: ${restTemp !== null ? restTemp + '°F' : 'N/A'}<br>
-            Running: ${data.running} - Since: ${runningSince ? new Date(runningSince).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
+            Running: ${running} - Since: ${runningSince ? new Date(runningSince).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
             Resting: ${resting} - Since: ${restingSince ? new Date(restingSince).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
             Schedule: ${holdType}<br>
             Temporary Hold Until: ${holdUntilTime}

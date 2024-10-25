@@ -14,12 +14,53 @@ let appData = JSON.parse(localStorage.getItem('appData')) || {
     restingSince: null,
     runningSince: null,
     runningAtSetpointSince: null,
+    runningAtSetpointMinTime: 600000
 };
 function saveAppData() {
     localStorage.setItem('appData', JSON.stringify(appData));
 }
-const runningAtSetpointMinTime = 600000;
 $(document).ready(function() {
+    initializeUI();
+    loadScheduleList();
+    updateHoldType();
+    updateStatus();
+setInterval(function() {
+    const currentTime = getCurrentTime();
+    if (appData.holdType === 'temporary' && appData.holdUntilTime && currentTime >= appData.holdUntilTime) {
+        appData.holdType = 'schedule'; 
+        $('input[name="hold"][value="schedule"]').prop('checked', true);
+        updateHoldType(); 
+        appData.setpoint = getScheduledTemp(); 
+        $('#setpoint').val(appData.setpoint);
+    } else if (appData.holdType === 'schedule') {
+        const newScheduledTemp = getScheduledTemp();
+        if (newScheduledTemp !== appData.scheduledTemp) {
+            appData.scheduledTemp = newScheduledTemp;
+            appData.setpoint = appData.scheduledTemp;
+            $('#setpoint').val(appData.setpoint);
+        }
+    }
+    new Promise((resolve) => {
+        updateStatus();
+        resolve();
+    }).then(() => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                saveAppData();
+                resolve();
+            }, 1000);
+        });
+    }).then(() => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                runCycleRange(appData.setpoint, appData.mode);
+                resolve();
+            }, 1000);
+        });
+    }).catch((error) => {
+        console.error('An error occurred:', error);
+    });
+}, 60000);
     function initializeUI() {
         $(`input[name="mode"][value="${appData.mode}"]`).prop('checked', true);
         $(`input[name="hold"][value="${appData.holdType}"]`).prop('checked', true);
@@ -32,7 +73,6 @@ $(document).ready(function() {
         }
         updateHoldType();
     }
-    initializeUI();
     $('#importSchedules').click(function() {
         $('#importFile').click();
     });
@@ -175,33 +215,31 @@ $('#apply').click(function() {
     runCycleRange(appData.setpoint, appData.mode);
     saveAppData();
 });
-setInterval(function() {
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    if (appData.holdType === 'temporary' && appData.holdUntilTime && currentTime >= appData.holdUntilTime) {
-        appData.holdType = 'schedule'; 
-        $('input[name="hold"][value="schedule"]').prop('checked', true);
-        updateHoldType(); 
-        appData.setpoint = getScheduledTemp(); 
-        $('#setpoint').val(appData.setpoint);
-        runCycleRange(appData.setpoint, appData.mode);
-    } else if (appData.holdType === 'schedule') {
-        const newScheduledTemp = getScheduledTemp();
-        if (newScheduledTemp !== appData.scheduledTemp) {
-            appData.scheduledTemp = newScheduledTemp;
-            appData.setpoint = appData.scheduledTemp;
-            $('#setpoint').val(appData.setpoint);
-            runCycleRange(appData.setpoint, appData.mode);
-        }
-    }
-    updateStatus();
-    saveAppData();
-    runCycleRange(appData.setpoint, appData.mode);
-}, 60000);
-    loadScheduleList();
-    updateHoldType();
-    updateStatus();
 });
+function updateStatus() {
+    $.get('/get_status', function(data) {
+        appData.latestReading = data;
+        appData.running = data.running;
+        appData.current_temp = data.current_temp;
+        if (appData.holdType === 'schedule') {
+            appData.scheduledTemp = getScheduledTemp();
+            $('#setpoint').val(appData.scheduledTemp);
+            appData.setpoint = appData.scheduledTemp;
+        }
+        $('#status').html(`<pre>${JSON.stringify(appData, null, 2)}</pre>`);
+    });
+}
+function formatTime(hours, minutes) {
+    return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+}
+function getCurrentTime() {
+    const now = new Date();
+    return formatTime(now.getHours(), now.getMinutes());
+}
+function getOneHourLaterTime() {
+    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
+    return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
+}
 function getScheduleTimeslots() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
@@ -220,8 +258,7 @@ function getScheduledTemp() {
         return appData.setpoint; 
     }
     const schedule = appData.currentSchedule.timeslots;
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const currentTime = getCurrentTime();
     const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
     for (let i = sortedSchedule.length - 1; i >= 0; i--) {
         if (sortedSchedule[i].time <= currentTime) {
@@ -247,14 +284,6 @@ function getScheduledTemp() {
         appData.scheduledTemp = parseFloat($('#setpoint').val());
     }
     return appData.scheduledTemp;
-}
-function getCurrentTime() {
-    const now = new Date();
-    return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-}
-function getOneHourLaterTime() {
-    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
-    return oneHourLater.getHours().toString().padStart(2, '0') + ':' + oneHourLater.getMinutes().toString().padStart(2, '0');
 }
 function updateHoldType() {
     appData.holdType = $('input[name="hold"]:checked').val();
@@ -349,53 +378,34 @@ function runCycleRange(setpoint, mode) {
         resting: appData.resting
     };
     if (currentTemp !== null) {
-        if (mode === 'cool') {
-            newState = runCool(currentTemp, running, setpoint, restTemp, newState);
-        } else if (mode === 'heat') {
-            newState = runHeat(currentTemp, running, setpoint, restTemp, newState);
-        }
+        newState = runMode(currentTemp, running, setpoint, restTemp, newState);
     }
     cycleStateManagement(newState.mode, newState.setpoint, newState.resting);
 }
-function runCool(currentTemp, running, setpoint, restTemp, state) {
+function runMode(currentTemp, running, setpoint, restTemp, state) {
+    const isCooling = state.mode === 'cool';
+    const tempCondition = isCooling ? 
+        (temp, limit) => temp <= limit :
+        (temp, limit) => temp >= limit;
+    const restTempCondition = isCooling ?
+        (temp, limit) => temp >= limit :
+        (temp, limit) => temp <= limit;
     if (!state.resting) {
-        if (running && currentTemp <= setpoint) {
+        if (running && tempCondition(currentTemp, setpoint)) {
             if (appData.runningAtSetpointSince === null) {
                 appData.runningAtSetpointSince = Date.now();
             }
-            if (Date.now() - appData.runningAtSetpointSince >= runningAtSetpointMinTime) {
+            if (Date.now() - appData.runningAtSetpointSince >= appData.runningAtSetpointMinTime) {
                 return { ...state, setpoint: restTemp, resting: true };
             }
         } else {
             appData.runningAtSetpointSince = null;
-            if (currentTemp >= restTemp) {
+            if (restTempCondition(currentTemp, restTemp)) {
                 return { ...state, setpoint: setpoint, resting: false };
             }
         }
     } else {
-        if (currentTemp >= restTemp) {
-            return { ...state, setpoint: setpoint, resting: false };
-        }
-    }
-    return state;
-}
-function runHeat(currentTemp, running, setpoint, restTemp, state) {
-    if (!state.resting) {
-        if (running && currentTemp >= setpoint) {
-            if (appData.runningAtSetpointSince === null) {
-                appData.runningAtSetpointSince = Date.now();
-            }
-            if (Date.now() - appData.runningAtSetpointSince >= runningAtSetpointMinTime) {
-                return { ...state, setpoint: restTemp, resting: true };
-            }
-        } else {
-            appData.runningAtSetpointSince = null;
-            if (currentTemp <= restTemp) {
-                return { ...state, setpoint: setpoint, resting: false };
-            }
-        }
-    } else {
-        if (currentTemp <= restTemp) {
+        if (restTempCondition(currentTemp, restTemp)) {
             return { ...state, setpoint: setpoint, resting: false };
         }
     }
@@ -413,17 +423,4 @@ function cycleStateManagement(mode, setpoint, isResting) {
 }
 function setThermostat(setpoint, mode) {
     $.post('/set_update', { mode: mode, setpoint: setpoint });
-}
-function updateStatus() {
-    $.get('/get_status', function(data) {
-        appData.latestReading = data;
-        appData.running = data.running;
-        appData.current_temp = data.current_temp;
-        if (appData.holdType === 'schedule') {
-            appData.scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(appData.scheduledTemp);
-            appData.setpoint = appData.scheduledTemp;
-        }
-        $('#status').html(`<pre>${JSON.stringify(appData, null, 2)}</pre>`);
-    });
 }

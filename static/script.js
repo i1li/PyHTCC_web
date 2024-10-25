@@ -1,4 +1,38 @@
+let appData = JSON.parse(localStorage.getItem('appData')) || {
+    schedules: {},
+    currentScheduleName: '',
+    currentSchedule: {},
+    holdType: 'permanent',
+    holdUntilTime: null,
+    setpoint: null, 
+    scheduledTemp: null, 
+    cycleRange: null,
+    mode: 'cool',
+    latestReading: null,
+    running: false,
+    resting: false,
+    restingSince: null,
+    runningSince: null,
+    runningAtSetpointSince: null,
+};
+function saveAppData() {
+    localStorage.setItem('appData', JSON.stringify(appData));
+}
+const runningAtSetpointMinTime = 600000;
 $(document).ready(function() {
+    function initializeUI() {
+        $(`input[name="mode"][value="${appData.mode}"]`).prop('checked', true);
+        $(`input[name="hold"][value="${appData.holdType}"]`).prop('checked', true);
+        $('#setpoint').val(appData.setpoint);
+        $('#cycle_range').val(appData.cycleRange);
+        loadScheduleList();
+        if (appData.currentScheduleName) {
+            $('#load_schedule').val(appData.currentScheduleName);
+            loadSchedule(appData.currentScheduleName);
+        }
+        updateHoldType();
+    }
+    initializeUI();
     $('#importSchedules').click(function() {
         $('#importFile').click();
     });
@@ -9,9 +43,10 @@ $(document).ready(function() {
             reader.onload = function(e) {
                 try {
                     const importedSchedules = JSON.parse(e.target.result);
-                    localStorage.setItem('savedSchedules', JSON.stringify(importedSchedules));
+                    appData.schedules = importedSchedules;
+                    saveAppData();
                     alert('Schedules have been imported successfully.');
-                    loadScheduleList(); 
+                    loadScheduleList();
                 } catch (error) {
                     console.error('Error parsing JSON:', error);
                     alert('Failed to import schedules. Please ensure the file is a valid JSON.');
@@ -21,58 +56,50 @@ $(document).ready(function() {
         }
     });
     $('#exportSchedules').click(function() {
-        const savedSchedules = localStorage.getItem('savedSchedules');
-        if (savedSchedules) {
-            const blob = new Blob([savedSchedules], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'thermostat-schedules.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        } else {
-            alert('No schedules found to export.');
-        }
+        const blob = new Blob([JSON.stringify(appData.schedules)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'thermostat-schedules.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     });
     function loadScheduleList() {
-        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
         const $loadSelect = $('#load_schedule');
         $loadSelect.find('option:not(:first)').remove();
-        Object.keys(savedSchedules).forEach(name => {
-            $loadSelect.append($('<option>', {
-                value: name,
-                text: name
-            }));
+        Object.keys(appData.schedules).forEach(name => {
+            $loadSelect.append($('<option>', { value: name, text: name }));
         });
-        if (currentScheduleName) {
-            $loadSelect.val(currentScheduleName);
+        if (appData.currentScheduleName) {
+            $loadSelect.val(appData.currentScheduleName);
         }
     }
     function loadSchedule(scheduleName) {
-        const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
-        const schedule = savedSchedules[scheduleName];
+        const schedule = appData.schedules[scheduleName];
         if (schedule) {
-            localStorage.setItem('currentSchedule', JSON.stringify(schedule));
-        }
-        $('#schedule').empty();
-        timeslotCount = 0;
-        if (Array.isArray(schedule)) {
-            schedule.forEach(timeslot => addTimeslot(timeslot));
-        } else if (schedule && typeof schedule === 'object') {
+            appData.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
+            appData.currentScheduleName = scheduleName;
+            saveAppData();  
+            $('#schedule').empty();
             if (Array.isArray(schedule.timeslots)) {
                 schedule.timeslots.forEach(timeslot => addTimeslot(timeslot));
             } else {
                 console.error('Invalid schedule format');
             }
-        } else {
-            console.error('Invalid schedule format');
+            $('#load_schedule').val(scheduleName);
+            updateHoldType();
+            saveAppData();  
         }
-        currentScheduleName = scheduleName;
-        $('#load_schedule').val(scheduleName);
-        updateHoldType();
-    }    
+    }
+    $('#load_schedule').change(function() {
+        const selectedSchedule = $(this).val();
+        if (selectedSchedule) {
+            loadSchedule(selectedSchedule);
+            saveAppData();  
+        }
+    });
     function saveSchedule() {
         const schedule = [];
         $('.schedule-timeslot').each(function() {
@@ -83,33 +110,30 @@ $(document).ready(function() {
                 schedule.push({ time, heatTemp, coolTemp });
             }
         });
-        if (currentScheduleName) {
-            const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
-            savedSchedules[currentScheduleName] = { timeslots: schedule };
-            localStorage.setItem('savedSchedules', JSON.stringify(savedSchedules));
+        if (appData.currentScheduleName) {
+            appData.schedules[appData.currentScheduleName] = { timeslots: schedule };
         }
-        localStorage.setItem('currentSchedule', JSON.stringify({ timeslots: schedule }));
+        appData.currentSchedule = { timeslots: schedule };
         updateHoldType();
-    } 
-    $('#submit').click(function() {
-        updateHoldType();
-        cycleRange = $('#cycle_range').val();
-        const mode = $('input[name="mode"]:checked').val();
-        let setpoint;
-        updateHoldType();
-        if (holdType === 'schedule') {
-            setpoint = getScheduledTemp();
-            $('#setpoint').val(scheduledTemp);
-        } else if (holdType === 'temporary') {
-            holdUntilTime = $('#hold_until_time').val();
-            setpoint = $('#setpoint').val();
-        } else {
-            setpoint = $('#setpoint').val();
+        saveAppData();
+    }
+    $('#save_schedule').click(function() {
+        const name = prompt("Enter a name for this schedule:", appData.currentScheduleName);
+        if (name) {
+            const schedule = [];
+            $('.schedule-timeslot').each(function() {
+                const time = $(this).find('input[type="time"]').val();
+                const heatTemp = $(this).find('input[placeholder="Heat Temp"]').val();
+                const coolTemp = $(this).find('input[placeholder="Cool Temp"]').val();
+                if (time && (heatTemp || coolTemp)) {
+                    schedule.push({ time, heatTemp, coolTemp });
+                }
+            });
+            appData.schedules[name] = { timeslots: schedule };
+            appData.currentScheduleName = name;
+            loadScheduleList();
+            saveSchedule();
         }
-        if (!setpoint) {
-            setpoint = $('#setpoint').val();
-        }
-        setThermostat(setpoint, mode);
     });
     function addTimeslot(timeslot = {}) {
         const newTimeslot = `
@@ -122,111 +146,62 @@ $(document).ready(function() {
             <input type="number" placeholder="Cool Temp" value="${timeslot.coolTemp || ''}">
         </div>`;
         $('#schedule').append(newTimeslot);
-        timeslotCount++;
         updateHoldType();
     }
     $('#add_timeslot').click(function() {
         addTimeslot();
     });
-    $('#clear_schedule').click(function() {
-        $('#schedule').empty();
-        timeslotCount = 0;
-        currentScheduleName = '';
-        $('#load_schedule').val('');
-    });
-    $('#save_schedule').click(function() {
-        const name = prompt("Enter a name for this schedule:", currentScheduleName);
-        if (name) {
-            const schedule = [];
-            $('.schedule-timeslot').each(function() {
-                const time = $(this).find('input[type="time"]').val();
-                const heatTemp = $(this).find('input[placeholder="Heat Temp"]').val();
-                const coolTemp = $(this).find('input[placeholder="Cool Temp"]').val();
-                if (time && (heatTemp || coolTemp)) {
-                    schedule.push({ time, heatTemp, coolTemp });
-                }
-            });
-            const savedSchedules = JSON.parse(localStorage.getItem('savedSchedules')) || {};
-            savedSchedules[name] = {
-                timeslots: schedule,
-            };
-            localStorage.setItem('savedSchedules', JSON.stringify(savedSchedules));
-            currentScheduleName = name;
-            loadScheduleList();
-            saveSchedule();
-        }
-    });
-    $('#load_schedule').change(function() {
-        const selectedSchedule = $(this).val();
-        if (selectedSchedule) {
-            loadSchedule(selectedSchedule);
-        }
-    });
     $(document).on('click', '.remove-timeslot', function() {
         $(this).closest('.schedule-timeslot').remove();
-        timeslotCount--;
+        updateHoldType();
     });
-    setInterval(function() {
-        if (holdType === 'schedule') {
-            const scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(scheduledTemp);
-            setThermostat(scheduledTemp, mode);
-        } else if (holdType === 'temporary') {
-            const now = new Date();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            if (currentTime === holdUntilTime) {
-                holdType = 'schedule';
-                $('input[name="hold"][value="schedule"]').prop('checked', true);
-                updateHoldType();
-            }
+    $('#clear_schedule').click(function() {
+        $('#schedule').empty();
+        updateHoldType();
+    });
+$('#apply').click(function() {
+    updateHoldType(); 
+    appData.cycleRange = $('#cycle_range').val();
+    appData.mode = $('input[name="mode"]:checked').val();
+    if (appData.holdType === 'schedule') {
+        appData.setpoint = getScheduledTemp();
+    } else {
+        appData.setpoint = parseFloat($('#setpoint').val());
+        if (appData.holdType === 'temporary') {
+            appData.holdUntilTime = $('#hold_until_time').val();
         }
-        updateStatus();
-    }, 60000);
-    loadScheduleList();
-    updateHoldType();
-    updateStatus(); 
+    }
+    $('#setpoint').val(appData.setpoint);
+    runCycleRange(appData.setpoint, appData.mode);
+    saveAppData();
 });
-let lastUpdateTime = 0;
-let latestReading = null;
-let cycleRange;
-let currentScheduleName = '';
-let scheduledTemp;
-let timeslotCount = 0;
-let mode = 'cool';
-let holdType = null;
-let holdUntilTime = null;
-let restTemp = null;
-let resting = false;
-let restingSince = null;
-let running = false;
-let runningSince = null;
-let setpointSince = null; 
-const minSetpointRunTime = 600000;
-function setNextScheduledTime() {
+setInterval(function() {
     const now = new Date();
     const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    let nextTimeslot = null;
-    $('.schedule-timeslot').each(function() {
-        const timeslotTime = $(this).find('input[type="time"]').val();
-        if (timeslotTime > currentTime && (!nextTimeslot || timeslotTime < nextTimeslot.time)) {
-            nextTimeslot = {
-                time: timeslotTime,
-                heatTemp: $(this).find('input[placeholder="Heat Temp"]').val(),
-                coolTemp: $(this).find('input[placeholder="Cool Temp"]').val()
-            };
+    if (appData.holdType === 'temporary' && appData.holdUntilTime && currentTime >= appData.holdUntilTime) {
+        appData.holdType = 'schedule'; 
+        $('input[name="hold"][value="schedule"]').prop('checked', true);
+        updateHoldType(); 
+        appData.setpoint = getScheduledTemp(); 
+        $('#setpoint').val(appData.setpoint);
+        runCycleRange(appData.setpoint, appData.mode);
+    } else if (appData.holdType === 'schedule') {
+        const newScheduledTemp = getScheduledTemp();
+        if (newScheduledTemp !== appData.scheduledTemp) {
+            appData.scheduledTemp = newScheduledTemp;
+            appData.setpoint = appData.scheduledTemp;
+            $('#setpoint').val(appData.setpoint);
+            runCycleRange(appData.setpoint, appData.mode);
         }
-    });
-    if (nextTimeslot) {
-        $('#hold_until_time').val(nextTimeslot.time);
-        $('#hold_until_heat_temp').val(nextTimeslot.heatTemp);
-        $('#hold_until_cool_temp').val(nextTimeslot.coolTemp);
-    } else {
-        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-        $('#hold_until_time').val(oneHourLater.getHours().toString().padStart(2, '0') + ':' + oneHourLater.getMinutes().toString().padStart(2, '0'));
-        $('#hold_until_heat_temp').val($('#setpoint').val());
-        $('#hold_until_cool_temp').val($('#setpoint').val());
     }
-}
+    updateStatus();
+    saveAppData();
+    runCycleRange(appData.setpoint, appData.mode);
+}, 60000);
+    loadScheduleList();
+    updateHoldType();
+    updateStatus();
+});
 function getScheduleTimeslots() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
@@ -239,27 +214,93 @@ function getScheduleTimeslots() {
     });
     return timeslots.sort((a, b) => a.time.localeCompare(b.time));
 }
+function getScheduledTemp() {
+    if (!appData.currentSchedule || !appData.currentSchedule.timeslots) {
+        console.error('No current schedule or timeslots');
+        return appData.setpoint; 
+    }
+    const schedule = appData.currentSchedule.timeslots;
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
+    for (let i = sortedSchedule.length - 1; i >= 0; i--) {
+        if (sortedSchedule[i].time <= currentTime) {
+            if (appData.mode === 'cool' && sortedSchedule[i].coolTemp) {
+                appData.scheduledTemp = parseFloat(sortedSchedule[i].coolTemp);
+                return appData.scheduledTemp;
+            } else if (appData.mode === 'heat' && sortedSchedule[i].heatTemp) {
+                appData.scheduledTemp = parseFloat(sortedSchedule[i].heatTemp);
+                return appData.scheduledTemp;
+            }
+        }
+    }
+    if (sortedSchedule.length > 0) {
+        const lastTimeslot = sortedSchedule[sortedSchedule.length - 1];
+        if (appData.mode === 'cool' && lastTimeslot.coolTemp) {
+            appData.scheduledTemp = parseFloat(lastTimeslot.coolTemp);
+        } else if (appData.mode === 'heat' && lastTimeslot.heatTemp) {
+            appData.scheduledTemp = parseFloat(lastTimeslot.heatTemp);
+        } else {
+            appData.scheduledTemp = parseFloat($('#setpoint').val());
+        }
+    } else {
+        appData.scheduledTemp = parseFloat($('#setpoint').val());
+    }
+    return appData.scheduledTemp;
+}
+function getCurrentTime() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+}
+function getOneHourLaterTime() {
+    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
+    return oneHourLater.getHours().toString().padStart(2, '0') + ':' + oneHourLater.getMinutes().toString().padStart(2, '0');
+}
+function updateHoldType() {
+    appData.holdType = $('input[name="hold"]:checked').val();
+    const hasSchedule = $('.schedule-timeslot').length > 0;
+    $('#follow_schedule').prop('disabled', !hasSchedule);
+    if (!hasSchedule) {
+        if (appData.holdType === 'schedule') {
+            $('input[name="hold"][value="permanent"]').prop('checked', true);
+            appData.holdType = 'permanent';
+        }
+    }
+        if (appData.holdType === 'schedule') {
+            $('#setpoint').prop('readonly', true);
+            appData.scheduledTemp = getScheduledTemp();
+            appData.setpoint = appData.scheduledTemp; 
+            $('#setpoint').val(appData.setpoint);
+            $('#temp_hold_options').hide();
+        } else if (appData.holdType === 'temporary') {
+            $('#setpoint').prop('readonly', false);
+            $('#temp_hold_options').show();
+            if (!appData.holdUntilTime) {
+                setNextScheduledTime();
+                appData.holdUntilTime = $('#hold_until_time').val();
+            }
+        } else { 
+            $('#setpoint').prop('readonly', false);
+            $('#temp_hold_options').hide();
+        }
+        saveAppData();
+    }
+$('input[name="hold"]').change(function() {
+    updateHoldType();
+});
+function updateHoldUntilFields(timeslot) {
+    $('#hold_until_time').val(timeslot.time);
+    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
+    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
+    appData.holdUntilTime = timeslot.time;
+}
 function updateHoldUntilTime(direction) {
     const timeslots = getScheduleTimeslots();
-    let newTimeslot;
-    if (direction === 'next') {
-        newTimeslot = timeslots.find(timeslot => timeslot.time > holdUntilTime) || timeslots[0];
-    } else if (direction === 'prev') {
-        newTimeslot = timeslots.reverse().find(timeslot => timeslot.time < holdUntilTime) || timeslots[timeslots.length - 1];
-    }
+    const newTimeslot = findNextTimeslot(appData.holdUntilTime, timeslots, direction);
     if (newTimeslot) {
-        $('#hold_until_time').val(newTimeslot.time);
-        $('#hold_until_heat_temp').val(newTimeslot.heatTemp);
-        $('#hold_until_cool_temp').val(newTimeslot.coolTemp);
-        holdUntilTime = newTimeslot.time;
+        updateHoldUntilFields(newTimeslot);
     } else {
-        const now = new Date();
-        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-        const newTime = oneHourLater.getHours().toString().padStart(2, '0') + ':' + oneHourLater.getMinutes().toString().padStart(2, '0');
-        $('#hold_until_time').val(newTime);
-        $('#hold_until_heat_temp').val($('#setpoint').val());
-        $('#hold_until_cool_temp').val($('#setpoint').val());
-        holdUntilTime = newTime;
+        updateHoldUntilFields({ time: getOneHourLaterTime() });
     }
     $('input[name="hold"][value="temporary"]').prop('checked', true);
     updateHoldType();
@@ -268,172 +309,127 @@ $('#next_timeslot, #prev_timeslot').click(function() {
     const direction = $(this).attr('id') === 'next_timeslot' ? 'next' : 'prev';
     updateHoldUntilTime(direction);
 });
-function updateHoldType() {
-    holdType = $('input[name="hold"]:checked').val() || 'permanent';
-    const hasSchedule = $('.schedule-timeslot').length > 0;
-    $('#follow_schedule').prop('disabled', !hasSchedule);
-    if (!hasSchedule) {
-        if (holdType === 'schedule') {
-            $('input[name="hold"][value="permanent"]').prop('checked', true);
-            holdType = 'permanent';
-        }
+function findNextTimeslot(currentTime, timeslots, direction) {
+    if (direction === 'prev') {
+        timeslots = timeslots.slice().reverse();
     }
-    if (holdType === 'schedule') {
-        $('#setpoint').prop('readonly', true);
-        const scheduledTemp = getScheduledTemp();
-        $('#setpoint').val(scheduledTemp);
-        $('#temp_hold_options').hide();
-    } else if (holdType === 'temporary') {
-        $('#setpoint').prop('readonly', false);
-        $('#temp_hold_options').show();
-        if (!holdUntilTime) {
-            setNextScheduledTime();
-            holdUntilTime = $('#hold_until_time').val();
-        }
-     } else {
-        $('#setpoint').prop('readonly', false);
-        $('#temp_hold_options').hide();
-    }
+    return timeslots.find(timeslot => 
+        direction === 'next' ? timeslot.time > currentTime : timeslot.time < currentTime
+    ) || timeslots[0];
 }
-function getScheduledTemp() {
-    const currentSchedule = JSON.parse(localStorage.getItem('currentSchedule')) || {};
-    const schedule = currentSchedule.timeslots || [];
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-    const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
-    for (let i = sortedSchedule.length - 1; i >= 0; i--) {
-        if (sortedSchedule[i].time <= currentTime) {
-            if (mode === 'cool' && sortedSchedule[i].coolTemp) {
-                scheduledTemp = parseFloat(sortedSchedule[i].coolTemp);
-                return;
-            } else if (mode === 'heat' && sortedSchedule[i].heatTemp) {
-                scheduledTemp = parseFloat(sortedSchedule[i].heatTemp);
-                return;
-            }
+function setNextScheduledTime() {
+    const currentTime = getCurrentTime();
+    let nextTimeslot = null;
+    $('.schedule-timeslot').each(function() {
+        const timeslotTime = $(this).find('input[type="time"]').val();
+        if (timeslotTime > currentTime && (!nextTimeslot || timeslotTime < nextTimeslot.time)) {
+            nextTimeslot = {
+                time: timeslotTime,
+                heatTemp: $(this).find('input[placeholder="Heat Temp"]').val(),
+                coolTemp: $(this).find('input[placeholder="Cool Temp"]').val()
+            };
         }
-    }
-    if (sortedSchedule.length > 0) {
-        const lastTimeslot = sortedSchedule[sortedSchedule.length - 1];
-        if (mode === 'cool' && lastTimeslot.coolTemp) {
-            scheduledTemp = parseFloat(lastTimeslot.coolTemp);
-        } else if (mode === 'heat' && lastTimeslot.heatTemp) {
-            scheduledTemp = parseFloat(lastTimeslot.heatTemp);
-        } else {
-            scheduledTemp = parseFloat($('#setpoint').val());
-        }
+    });
+    if (nextTimeslot) {
+        updateHoldUntilFields(nextTimeslot);
     } else {
-        scheduledTemp = parseFloat($('#setpoint').val());
+        updateHoldUntilFields({ time: getOneHourLaterTime() });
     }
+    saveAppData();
 }
-function updateRunState(mode, setpoint) {
-    if (resting) { 
-        setThermostat(setpoint, mode);
-        resting = false;
-        restingSince = null;
-        runningSince = Date.now(); 
-        setpointSince = null; 
+function runCycleRange(setpoint, mode) {
+    if (!appData.latestReading) return;
+    const currentTemp = appData.latestReading.current_temp;
+    const running = appData.latestReading.running;
+    const cycleRange = parseFloat(appData.cycleRange);
+    const restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
+    let newState = {
+        mode: mode,
+        setpoint: setpoint,
+        resting: appData.resting
+    };
+    if (currentTemp !== null) {
+        if (mode === 'cool') {
+            newState = runCool(currentTemp, running, setpoint, restTemp, newState);
+        } else if (mode === 'heat') {
+            newState = runHeat(currentTemp, running, setpoint, restTemp, newState);
+        }
     }
+    stateManagement(newState.mode, newState.setpoint, newState.resting);
 }
-function updateRestState(mode, restTemp) {
-    if (!resting) { 
-        setThermostat(restTemp, mode);
-        resting = true;
-        restingSince = Date.now(); 
-        runningSince = null;
-        setpointSince = null; 
-    }
-}
-function runCool(currentTemp, running, setpoint, restTemp) {
-    if (!resting) {
+function runCool(currentTemp, running, setpoint, restTemp, state) {
+    if (!state.resting) {
         if (running && currentTemp <= setpoint) {
-            if (setpointSince === null) {
-                setpointSince = Date.now(); 
+            if (appData.runningAtSetpointSince === null) {
+                appData.runningAtSetpointSince = Date.now();
             }
-            if (Date.now() - setpointSince >= minSetpointRunTime) {
-                updateRestState('cool', restTemp);
+            if (Date.now() - appData.runningAtSetpointSince >= runningAtSetpointMinTime) {
+                return { ...state, setpoint: restTemp, resting: true };
             }
         } else {
-            setpointSince = null; 
+            appData.runningAtSetpointSince = null;
             if (currentTemp >= restTemp) {
-                updateRunState('cool', setpoint);
+                return { ...state, setpoint: setpoint, resting: false };
             }
         }
     } else {
         if (currentTemp >= restTemp) {
-            updateRunState('cool', setpoint);
+            return { ...state, setpoint: setpoint, resting: false };
         }
     }
+    return state;
 }
-function runHeat(currentTemp, running, setpoint, restTemp) {
-    if (!resting) {
+function runHeat(currentTemp, running, setpoint, restTemp, state) {
+    if (!state.resting) {
         if (running && currentTemp >= setpoint) {
-            if (setpointSince === null) {
-                setpointSince = Date.now(); 
+            if (appData.runningAtSetpointSince === null) {
+                appData.runningAtSetpointSince = Date.now();
             }
-            if (Date.now() - setpointSince >= minSetpointRunTime) {
-                updateRestState('heat', restTemp);
+            if (Date.now() - appData.runningAtSetpointSince >= runningAtSetpointMinTime) {
+                return { ...state, setpoint: restTemp, resting: true };
             }
         } else {
-            setpointSince = null; 
+            appData.runningAtSetpointSince = null;
             if (currentTemp <= restTemp) {
-                updateRunState('heat', setpoint);
+                return { ...state, setpoint: setpoint, resting: false };
             }
         }
     } else {
         if (currentTemp <= restTemp) {
-            updateRunState('heat', setpoint);
+            return { ...state, setpoint: setpoint, resting: false };
         }
     }
+    return state;
 }
-function runCycleRange() {
-    if (!latestReading) {
-        return;
-    }
-    const scheduledTemp = getScheduledTemp();
-    let setpoint;
-    if (holdType === 'schedule') {
-        setpoint = scheduledTemp;
-    } else {
-        setpoint = parseFloat($('#setpoint').val());
-    }
-    if (currentTemp !== null) {
-        if (mode === 'cool') {
-            runCool(currentTemp, running, setpoint, restTemp);
-        } else if (mode === 'heat') {
-            runHeat(currentTemp, running, setpoint, restTemp);
-        }
-    }
+function setRunState(mode, setpoint) {
+    stateManagement(mode, setpoint, false);
+}
+function setRestState(mode, restTemp) {
+    stateManagement(mode, restTemp, true);
+}
+function stateManagement(mode, setpoint, isResting) {
+    appData.mode = mode;
+    appData.setpoint = setpoint;
+    appData.resting = isResting;
+    appData.restingSince = isResting ? Date.now() : null;
+    appData.runningSince = isResting ? null : Date.now();
+    appData.runningAtSetpointSince = null;
+    saveAppData();
+    setThermostat(setpoint, mode);
 }
 function setThermostat(setpoint, mode) {
-    $.post('/set_update', {
-        mode: mode,
-        setpoint: setpoint,
-    });
+    $.post('/set_update', { mode: mode, setpoint: setpoint });
 }
 function updateStatus() {
-    lastUpdateTime = Date.now();
     $.get('/get_status', function(data) {
-        latestReading = data;
-        running = data.running;
-        currentTemp = data.current_temp;
-        restTemp = mode === 'cool' ? 
-        parseFloat(data.setpoint) + parseFloat(cycleRange) : 
-        parseFloat(data.setpoint) - parseFloat(cycleRange);
-        if (holdType === 'schedule') {
-            const scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(scheduledTemp);
+        appData.latestReading = data;
+        appData.running = data.running;
+        appData.current_temp = data.current_temp;
+        if (appData.holdType === 'schedule') {
+            appData.scheduledTemp = getScheduledTemp();
+            $('#setpoint').val(appData.scheduledTemp);
+            appData.setpoint = appData.scheduledTemp;
         }
-        $('#status').html(`
-            Mode: ${data.mode}<br>
-            Current Temp: ${currentTemp}°F<br>
-            Set Temp: ${data.setpoint}°F<br>
-            Cycle Range: ${cycleRange}°F<br>
-            Rest Temp: ${restTemp !== null ? restTemp + '°F' : 'N/A'}<br>
-            Running: ${running} - Since: ${runningSince ? new Date(runningSince).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
-            Resting: ${resting} - Since: ${restingSince ? new Date(restingSince).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : 'N/A'}<br>
-            Schedule: ${holdType}<br>
-            Temporary Hold Until: ${holdUntilTime}
-        `);
-        runCycleRange();
+        $('#status').html(`<pre>${JSON.stringify(appData, null, 2)}</pre>`);
     });
 }

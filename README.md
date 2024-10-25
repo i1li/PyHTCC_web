@@ -2,7 +2,7 @@
 
 A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats.
 
-Limitations Addressed: The Honeywell app only alows 4 schedule timeslots, 1 saved schedule, and timeslots can only be in intervals of 15 minutes.
+Limitations Addressed: The Honeywell app only alows 1 saved schedule, 4 schedule timeslots per day, and must be in intervals of 15 minutes.
 
 ## Features
 - Unlimited schedule timeslots with 1 minute increments
@@ -30,7 +30,7 @@ Cycle Range is the amount of degrees away from the setpoint allowed while in res
 - Optional field: leave this value blank or `0` for default behavior.
 - Useful to reduce frequent on/off cycles, especially when the output of the unit is high relative to the space controlled.
 
-This is basically the same as the HVAC term "deadband", with the only difference being that deadband is split evenly in both directions of the setpoint, while Cycle Range applies directionally based on cool or heat mode. The system will cool/heat until reaching the setpoint, and then rests until the temperature reaches the set temperature plus (or minus in the case of heat) the Cycle Range.
+This is related to the <a href="https://search.brave.com/search?q=hvac+deadband+hysteresis&source=web&summary=1&summary_og=391a2b9ee4a6faf7cb0377">HVAC terms "hysteresis" & "deadband"</a>, with the difference being that they're typically split evenly in both directions of the setpoint, while Cycle Range applies directionally based on cool or heat mode. For this reason a more descriptive term might be "Rest Cycle Tolerance Range". The system cools/heats until reaching the setpoint, and then rests until the temperature reaches the set temperature plus (or minus in the case of heat) the Cycle Range.
 
 ### Code Explanation
 The `runCycleRange` function uses `restTemp`, encapsulated in the following line of code:

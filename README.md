@@ -9,7 +9,7 @@ Limitations Addressed: The Honeywell app only alows 1 saved schedule, 4 schedule
 - Save & choose from multiple schedules
 - Import & export saved schedules
 - Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
-- [Cycle Range](#what-is-cycle-range)
+- [Cycle Range](#what-is-cycle-range) AKA hysteresis or deadband
 
 ## Getting Started
 

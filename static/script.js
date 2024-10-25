@@ -355,7 +355,7 @@ function runCycleRange(setpoint, mode) {
             newState = runHeat(currentTemp, running, setpoint, restTemp, newState);
         }
     }
-    stateManagement(newState.mode, newState.setpoint, newState.resting);
+    cycleStateManagement(newState.mode, newState.setpoint, newState.resting);
 }
 function runCool(currentTemp, running, setpoint, restTemp, state) {
     if (!state.resting) {
@@ -401,13 +401,7 @@ function runHeat(currentTemp, running, setpoint, restTemp, state) {
     }
     return state;
 }
-function setRunState(mode, setpoint) {
-    stateManagement(mode, setpoint, false);
-}
-function setRestState(mode, restTemp) {
-    stateManagement(mode, restTemp, true);
-}
-function stateManagement(mode, setpoint, isResting) {
+function cycleStateManagement(mode, setpoint, isResting) {
     appData.mode = mode;
     appData.setpoint = setpoint;
     appData.resting = isResting;

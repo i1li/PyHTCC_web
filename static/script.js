@@ -1,10 +1,13 @@
 let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     schedules: {},
+    currentTemp: null,
+    currentMode: null,
     currentScheduleName: '',
     currentSchedule: {},
     holdType: 'permanent',
     holdUntilTime: null,
     setpoint: null, 
+    currentSetpoint: null,
     scheduledTemp: null, 
     cycleRange: null,
     mode: 'cool',
@@ -208,19 +211,6 @@ $('#apply').click(function() {
     saveAppData();
 });
 });
-function updateStatus() {
-    $.get('/get_status', function(data) {
-        AC.latestReading = data;
-        AC.running = data.running;
-        AC.current_temp = data.current_temp;
-        if (AC.holdType === 'schedule') {
-            AC.scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(AC.scheduledTemp);
-            AC.setpoint = AC.scheduledTemp;
-        }
-        $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
-    });
-}
 function getScheduleTimeslots() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
@@ -347,8 +337,8 @@ function setNextScheduledTime() {
 }
 function runCycleRange(setpoint, mode) {
     if (!AC.latestReading) return;
-    const currentTemp = AC.latestReading.current_temp;
-    const running = AC.latestReading.running;
+    const currentTemp = AC.currentTemp;
+    const running = AC.running;
     const cycleRange = parseFloat(AC.cycleRange);
     const restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
     let newState = {
@@ -400,7 +390,24 @@ function cycleStateManagement(mode, setpoint, isResting) {
     setThermostat(setpoint, mode);
 }
 function setThermostat(setpoint, mode) {
-    $.post('/set_update', { mode: mode, setpoint: setpoint });
+    if (mode !== AC.currentMode || setpoint !== AC.currentSetpoint) {
+        $.post('/set_update', { mode: mode, setpoint: setpoint });
+    }
+}
+function updateStatus() {
+    $.get('/get_status', function(data) {
+        AC.latestReading = data;
+        AC.running = data.running;
+        AC.currentTemp = data.current_temp;
+        AC.currentSetpoint = data.setpoint;
+        AC.currentMode = data.mode;
+        if (AC.holdType === 'schedule') {
+            AC.scheduledTemp = getScheduledTemp();
+            $('#setpoint').val(AC.scheduledTemp);
+            AC.setpoint = AC.scheduledTemp;
+        }
+        $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+    });
 }
 function formatTime(hours, minutes) {
     return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');

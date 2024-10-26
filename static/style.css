@@ -1,7 +1,7 @@
 body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
 label, input, select { display: inline-block; margin: 5px 0; }
 button { margin: 10px 0; padding: 10px; width: 100%; }
-button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:hover {cursor: pointer; text-decoration: underline;}
+button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:hover {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
 #status { display: none; margin-top: 20px; padding: 10px; }
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
 .mode-option, .hold-option { width: 30%; }
@@ -17,6 +17,10 @@ button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:ho
     background-color: #007bff;
     color: white;
 }
+#heat:checked + label {
+    background-color: #dc3545;
+    color: white;
+}
 .schedule-timeslot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
 .remove-timeslot { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
 #temp_hold_options { display: none; margin-top: 10px; }
@@ -25,3 +29,16 @@ button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:ho
 .schedule-controls { display: flex; align-items: center; margin-bottom: 10px; }
 .schedule-controls select, .schedule-controls label { margin-right: 10px; }
 #add_timeslot,#clear_schedule,#save_schedule{width:32%;}
+#apply {
+    background-image: linear-gradient(to right, #007bff, #dc3545);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.7s ease-in-out;
+}
+#apply:hover {
+    background-image: linear-gradient(to left, #007bff, #dc3545);
+}

@@ -2,7 +2,7 @@ body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding
 label, input, select { display: inline-block; margin: 5px 0; }
 button { margin: 10px 0; padding: 10px; width: 100%; }
 button:hover, a:hover, input[type="checkbox"], input[type="checkbox"] + label:hover {cursor: pointer; text-decoration: underline;}
-#status { margin-top: 20px; padding: 10px; }
+#status { display: none; margin-top: 20px; padding: 10px; }
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }

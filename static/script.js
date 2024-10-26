@@ -1,4 +1,4 @@
-let appData = JSON.parse(localStorage.getItem('appData')) || {
+let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     schedules: {},
     currentScheduleName: '',
     currentSchedule: {},
@@ -17,7 +17,7 @@ let appData = JSON.parse(localStorage.getItem('appData')) || {
     runningAtSetpointMinTime: 600000
 };
 function saveAppData() {
-    localStorage.setItem('appData', JSON.stringify(appData));
+    localStorage.setItem('appData', JSON.stringify(AC));
 }
 $(document).ready(function() {
     initializeUI();
@@ -26,18 +26,18 @@ $(document).ready(function() {
     updateStatus();
 setInterval(function() {
     const currentTime = getCurrentTime();
-    if (appData.holdType === 'temporary' && appData.holdUntilTime && currentTime >= appData.holdUntilTime) {
-        appData.holdType = 'schedule'; 
+    if (AC.holdType === 'temporary' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
+        AC.holdType = 'schedule'; 
         $('input[name="hold"][value="schedule"]').prop('checked', true);
         updateHoldType(); 
-        appData.setpoint = getScheduledTemp(); 
-        $('#setpoint').val(appData.setpoint);
-    } else if (appData.holdType === 'schedule') {
+        AC.setpoint = getScheduledTemp(); 
+        $('#setpoint').val(AC.setpoint);
+    } else if (AC.holdType === 'schedule') {
         const newScheduledTemp = getScheduledTemp();
-        if (newScheduledTemp !== appData.scheduledTemp) {
-            appData.scheduledTemp = newScheduledTemp;
-            appData.setpoint = appData.scheduledTemp;
-            $('#setpoint').val(appData.setpoint);
+        if (newScheduledTemp !== AC.scheduledTemp) {
+            AC.scheduledTemp = newScheduledTemp;
+            AC.setpoint = AC.scheduledTemp;
+            $('#setpoint').val(AC.setpoint);
         }
     }
     new Promise((resolve) => {
@@ -53,7 +53,7 @@ setInterval(function() {
     }).then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
-                runCycleRange(appData.setpoint, appData.mode);
+                runCycleRange(AC.setpoint, AC.mode);
                 resolve();
             }, 1000);
         });
@@ -62,14 +62,14 @@ setInterval(function() {
     });
 }, 60000);
     function initializeUI() {
-        $(`input[name="mode"][value="${appData.mode}"]`).prop('checked', true);
-        $(`input[name="hold"][value="${appData.holdType}"]`).prop('checked', true);
-        $('#setpoint').val(appData.setpoint);
-        $('#cycle_range').val(appData.cycleRange);
+        $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
+        $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
+        $('#setpoint').val(AC.setpoint);
+        $('#cycle_range').val(AC.cycleRange);
         loadScheduleList();
-        if (appData.currentScheduleName) {
-            $('#load_schedule').val(appData.currentScheduleName);
-            loadSchedule(appData.currentScheduleName);
+        if (AC.currentScheduleName) {
+            $('#load_schedule').val(AC.currentScheduleName);
+            loadSchedule(AC.currentScheduleName);
         }
         updateHoldType();
     }
@@ -83,8 +83,7 @@ setInterval(function() {
             reader.onload = function(e) {
                 try {
                     const importedSchedules = JSON.parse(e.target.result);
-                    appData.schedules = importedSchedules;
-                    saveAppData();
+                    AC.schedules = importedSchedules;
                     alert('Schedules have been imported successfully.');
                     loadScheduleList();
                 } catch (error) {
@@ -96,7 +95,7 @@ setInterval(function() {
         }
     });
     $('#exportSchedules').click(function() {
-        const blob = new Blob([JSON.stringify(appData.schedules)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(AC.schedules)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -109,19 +108,18 @@ setInterval(function() {
     function loadScheduleList() {
         const $loadSelect = $('#load_schedule');
         $loadSelect.find('option:not(:first)').remove();
-        Object.keys(appData.schedules).forEach(name => {
+        Object.keys(AC.schedules).forEach(name => {
             $loadSelect.append($('<option>', { value: name, text: name }));
         });
-        if (appData.currentScheduleName) {
-            $loadSelect.val(appData.currentScheduleName);
+        if (AC.currentScheduleName) {
+            $loadSelect.val(AC.currentScheduleName);
         }
     }
     function loadSchedule(scheduleName) {
-        const schedule = appData.schedules[scheduleName];
+        const schedule = AC.schedules[scheduleName];
         if (schedule) {
-            appData.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
-            appData.currentScheduleName = scheduleName;
-            saveAppData();  
+            AC.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
+            AC.currentScheduleName = scheduleName;
             $('#schedule').empty();
             if (Array.isArray(schedule.timeslots)) {
                 schedule.timeslots.forEach(timeslot => addTimeslot(timeslot));
@@ -129,15 +127,12 @@ setInterval(function() {
                 console.error('Invalid schedule format');
             }
             $('#load_schedule').val(scheduleName);
-            updateHoldType();
-            saveAppData();  
         }
     }
     $('#load_schedule').change(function() {
         const selectedSchedule = $(this).val();
         if (selectedSchedule) {
             loadSchedule(selectedSchedule);
-            saveAppData();  
         }
     });
     function saveSchedule() {
@@ -150,15 +145,13 @@ setInterval(function() {
                 schedule.push({ time, heatTemp, coolTemp });
             }
         });
-        if (appData.currentScheduleName) {
-            appData.schedules[appData.currentScheduleName] = { timeslots: schedule };
+        if (AC.currentScheduleName) {
+            AC.schedules[AC.currentScheduleName] = { timeslots: schedule };
         }
-        appData.currentSchedule = { timeslots: schedule };
-        updateHoldType();
-        saveAppData();
+        AC.currentSchedule = { timeslots: schedule };
     }
     $('#save_schedule').click(function() {
-        const name = prompt("Enter a name for this schedule:", appData.currentScheduleName);
+        const name = prompt("Enter a name for this schedule:", AC.currentScheduleName);
         if (name) {
             const schedule = [];
             $('.schedule-timeslot').each(function() {
@@ -169,8 +162,8 @@ setInterval(function() {
                     schedule.push({ time, heatTemp, coolTemp });
                 }
             });
-            appData.schedules[name] = { timeslots: schedule };
-            appData.currentScheduleName = name;
+            AC.schedules[name] = { timeslots: schedule };
+            AC.currentScheduleName = name;
             loadScheduleList();
             saveSchedule();
         }
@@ -201,44 +194,32 @@ setInterval(function() {
     });
 $('#apply').click(function() {
     updateHoldType(); 
-    appData.cycleRange = $('#cycle_range').val();
-    appData.mode = $('input[name="mode"]:checked').val();
-    if (appData.holdType === 'schedule') {
-        appData.setpoint = getScheduledTemp();
+    AC.cycleRange = $('#cycle_range').val();
+    AC.mode = $('input[name="mode"]:checked').val();
+    if (AC.holdType === 'schedule') {
+        AC.setpoint = getScheduledTemp();
     } else {
-        appData.setpoint = parseFloat($('#setpoint').val());
-        if (appData.holdType === 'temporary') {
-            appData.holdUntilTime = $('#hold_until_time').val();
+        AC.setpoint = parseFloat($('#setpoint').val());
+        if (AC.holdType === 'temporary') {
+            AC.holdUntilTime = $('#hold_until_time').val();
         }
     }
-    $('#setpoint').val(appData.setpoint);
-    runCycleRange(appData.setpoint, appData.mode);
+    $('#setpoint').val(AC.setpoint);
     saveAppData();
 });
 });
 function updateStatus() {
     $.get('/get_status', function(data) {
-        appData.latestReading = data;
-        appData.running = data.running;
-        appData.current_temp = data.current_temp;
-        if (appData.holdType === 'schedule') {
-            appData.scheduledTemp = getScheduledTemp();
-            $('#setpoint').val(appData.scheduledTemp);
-            appData.setpoint = appData.scheduledTemp;
+        AC.latestReading = data;
+        AC.running = data.running;
+        AC.current_temp = data.current_temp;
+        if (AC.holdType === 'schedule') {
+            AC.scheduledTemp = getScheduledTemp();
+            $('#setpoint').val(AC.scheduledTemp);
+            AC.setpoint = AC.scheduledTemp;
         }
-        $('#status').html(`<pre>${JSON.stringify(appData, null, 2)}</pre>`);
+        $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
     });
-}
-function formatTime(hours, minutes) {
-    return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
-}
-function getCurrentTime() {
-    const now = new Date();
-    return formatTime(now.getHours(), now.getMinutes());
-}
-function getOneHourLaterTime() {
-    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
-    return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
 }
 function getScheduleTimeslots() {
     const timeslots = [];
@@ -253,66 +234,65 @@ function getScheduleTimeslots() {
     return timeslots.sort((a, b) => a.time.localeCompare(b.time));
 }
 function getScheduledTemp() {
-    if (!appData.currentSchedule || !appData.currentSchedule.timeslots) {
+    if (!AC.currentSchedule || !AC.currentSchedule.timeslots) {
         console.error('No current schedule or timeslots');
-        return appData.setpoint; 
+        return AC.setpoint; 
     }
-    const schedule = appData.currentSchedule.timeslots;
+    const schedule = AC.currentSchedule.timeslots;
     const currentTime = getCurrentTime();
     const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
     for (let i = sortedSchedule.length - 1; i >= 0; i--) {
         if (sortedSchedule[i].time <= currentTime) {
-            if (appData.mode === 'cool' && sortedSchedule[i].coolTemp) {
-                appData.scheduledTemp = parseFloat(sortedSchedule[i].coolTemp);
-                return appData.scheduledTemp;
-            } else if (appData.mode === 'heat' && sortedSchedule[i].heatTemp) {
-                appData.scheduledTemp = parseFloat(sortedSchedule[i].heatTemp);
-                return appData.scheduledTemp;
+            if (AC.mode === 'cool' && sortedSchedule[i].coolTemp) {
+                AC.scheduledTemp = parseFloat(sortedSchedule[i].coolTemp);
+                return AC.scheduledTemp;
+            } else if (AC.mode === 'heat' && sortedSchedule[i].heatTemp) {
+                AC.scheduledTemp = parseFloat(sortedSchedule[i].heatTemp);
+                return AC.scheduledTemp;
             }
         }
     }
     if (sortedSchedule.length > 0) {
         const lastTimeslot = sortedSchedule[sortedSchedule.length - 1];
-        if (appData.mode === 'cool' && lastTimeslot.coolTemp) {
-            appData.scheduledTemp = parseFloat(lastTimeslot.coolTemp);
-        } else if (appData.mode === 'heat' && lastTimeslot.heatTemp) {
-            appData.scheduledTemp = parseFloat(lastTimeslot.heatTemp);
+        if (AC.mode === 'cool' && lastTimeslot.coolTemp) {
+            AC.scheduledTemp = parseFloat(lastTimeslot.coolTemp);
+        } else if (AC.mode === 'heat' && lastTimeslot.heatTemp) {
+            AC.scheduledTemp = parseFloat(lastTimeslot.heatTemp);
         } else {
-            appData.scheduledTemp = parseFloat($('#setpoint').val());
+            AC.scheduledTemp = parseFloat($('#setpoint').val());
         }
     } else {
-        appData.scheduledTemp = parseFloat($('#setpoint').val());
+        AC.scheduledTemp = parseFloat($('#setpoint').val());
     }
-    return appData.scheduledTemp;
+    return AC.scheduledTemp;
 }
 function updateHoldType() {
-    appData.holdType = $('input[name="hold"]:checked').val();
+    AC.holdType = $('input[name="hold"]:checked').val();
     const hasSchedule = $('.schedule-timeslot').length > 0;
     $('#follow_schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
-        if (appData.holdType === 'schedule') {
+        if (AC.holdType === 'schedule') {
             $('input[name="hold"][value="permanent"]').prop('checked', true);
-            appData.holdType = 'permanent';
+            AC.holdType = 'permanent';
         }
     }
-        if (appData.holdType === 'schedule') {
+        if (AC.holdType === 'schedule') {
             $('#setpoint').prop('readonly', true);
-            appData.scheduledTemp = getScheduledTemp();
-            appData.setpoint = appData.scheduledTemp; 
-            $('#setpoint').val(appData.setpoint);
+            AC.scheduledTemp = getScheduledTemp();
+            AC.setpoint = AC.scheduledTemp; 
+            $('#setpoint').val(AC.setpoint);
             $('#temp_hold_options').hide();
-        } else if (appData.holdType === 'temporary') {
+        } else if (AC.holdType === 'temporary') {
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').show();
-            if (!appData.holdUntilTime) {
+            if (!AC.holdUntilTime) {
                 setNextScheduledTime();
-                appData.holdUntilTime = $('#hold_until_time').val();
+                AC.holdUntilTime = $('#hold_until_time').val();
             }
         } else { 
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').hide();
         }
-        saveAppData();
     }
 $('input[name="hold"]').change(function() {
     updateHoldType();
@@ -321,11 +301,11 @@ function updateHoldUntilFields(timeslot) {
     $('#hold_until_time').val(timeslot.time);
     $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
     $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
-    appData.holdUntilTime = timeslot.time;
+    AC.holdUntilTime = timeslot.time;
 }
 function updateHoldUntilTime(direction) {
     const timeslots = getScheduleTimeslots();
-    const newTimeslot = findNextTimeslot(appData.holdUntilTime, timeslots, direction);
+    const newTimeslot = findNextTimeslot(AC.holdUntilTime, timeslots, direction);
     if (newTimeslot) {
         updateHoldUntilFields(newTimeslot);
     } else {
@@ -364,18 +344,17 @@ function setNextScheduledTime() {
     } else {
         updateHoldUntilFields({ time: getOneHourLaterTime() });
     }
-    saveAppData();
 }
 function runCycleRange(setpoint, mode) {
-    if (!appData.latestReading) return;
-    const currentTemp = appData.latestReading.current_temp;
-    const running = appData.latestReading.running;
-    const cycleRange = parseFloat(appData.cycleRange);
+    if (!AC.latestReading) return;
+    const currentTemp = AC.latestReading.current_temp;
+    const running = AC.latestReading.running;
+    const cycleRange = parseFloat(AC.cycleRange);
     const restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
     let newState = {
         mode: mode,
         setpoint: setpoint,
-        resting: appData.resting
+        resting: AC.resting
     };
     if (currentTemp !== null) {
         newState = runMode(currentTemp, running, setpoint, restTemp, newState);
@@ -392,14 +371,14 @@ function runMode(currentTemp, running, setpoint, restTemp, state) {
         (temp, limit) => temp <= limit;
     if (!state.resting) {
         if (running && tempCondition(currentTemp, setpoint)) {
-            if (appData.runningAtSetpointSince === null) {
-                appData.runningAtSetpointSince = Date.now();
+            if (AC.runningAtSetpointSince === null) {
+                AC.runningAtSetpointSince = Date.now();
             }
-            if (Date.now() - appData.runningAtSetpointSince >= appData.runningAtSetpointMinTime) {
+            if (Date.now() - AC.runningAtSetpointSince >= AC.runningAtSetpointMinTime) {
                 return { ...state, setpoint: restTemp, resting: true };
             }
         } else {
-            appData.runningAtSetpointSince = null;
+            AC.runningAtSetpointSince = null;
             if (restTempCondition(currentTemp, restTemp)) {
                 return { ...state, setpoint: setpoint, resting: false };
             }
@@ -412,15 +391,25 @@ function runMode(currentTemp, running, setpoint, restTemp, state) {
     return state;
 }
 function cycleStateManagement(mode, setpoint, isResting) {
-    appData.mode = mode;
-    appData.setpoint = setpoint;
-    appData.resting = isResting;
-    appData.restingSince = isResting ? Date.now() : null;
-    appData.runningSince = isResting ? null : Date.now();
-    appData.runningAtSetpointSince = null;
-    saveAppData();
+    AC.mode = mode;
+    AC.setpoint = setpoint;
+    AC.resting = isResting;
+    AC.restingSince = isResting ? Date.now() : null;
+    AC.runningSince = isResting ? null : Date.now();
+    AC.runningAtSetpointSince = null;
     setThermostat(setpoint, mode);
 }
 function setThermostat(setpoint, mode) {
     $.post('/set_update', { mode: mode, setpoint: setpoint });
+}
+function formatTime(hours, minutes) {
+    return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
+}
+function getCurrentTime() {
+    const now = new Date();
+    return formatTime(now.getHours(), now.getMinutes());
+}
+function getOneHourLaterTime() {
+    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
+    return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
 }

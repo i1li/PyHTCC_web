@@ -2,7 +2,7 @@ body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding
 label, input, select { display: inline-block; margin: 5px 0; }
 button { margin: 10px 0; padding: 10px; width: 100%; }
 button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
-#status { display: none; margin-top: 20px; padding: 10px; }
+/* #status { display: none; margin-top: 20px; padding: 10px; } */
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }
@@ -42,3 +42,5 @@ button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; 
 #apply:hover {
     background-image: linear-gradient(to left, #007bff, #dc3545);
 }
+#apply:active {
+    background-image: linear-gradient(to top, #007bff91, #dc35468e);}

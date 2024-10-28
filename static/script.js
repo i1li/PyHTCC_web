@@ -17,11 +17,13 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     resting: false,
     restingSince: null,
     runningSince: null,
+    runningAtSetpointDuration: 0,
     runningAtSetpointSince: null,
-    runningAtSetpointMinTime: 300000,
+    atSetpointMinTime: 300000,
     cycleRangeSetpoint: 0,
     rawSetpoint: 0,
-    restSetpoint: 0
+    restSetpoint: 0,
+    restingAtSetpointDuration: 0,
 };
 function saveAppData() {
     localStorage.setItem('appData', JSON.stringify(AC));
@@ -32,26 +34,24 @@ $(document).ready(function() {
     updateHoldType();
     updateStatus();
 setInterval(function() {
-    new Promise((resolve) => {
-        updateStatus();
-        resolve();
-    }).then(() => {
+    updateStatus()
+    .then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 saveAppData();
                 resolve();
             }, 1000);
         });
-    }).then(() => {
+    })
+    .then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 runCycleRange(Number(AC.setpoint), AC.mode);
                 resolve();
             }, 1000);
         });
-    }).catch((error) => {
-        console.error('An error occurred:', error);
-    });
+    })
+    .catch(error => console.log('Error in update chain:', error.message));
 }, 60000);
     function initializeUI() {
         $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
@@ -63,7 +63,6 @@ setInterval(function() {
             $('#load_schedule').val(AC.currentScheduleName);
             loadSchedule(AC.currentScheduleName);
         }
-        updateHoldType();
     }
     $('#importSchedules').click(function() {
         $('#importFile').click();
@@ -171,14 +170,12 @@ setInterval(function() {
             <input type="number" placeholder="Cool Temp" value="${timeslot.coolTemp || ''}">
         </div>`;
         $('#schedule').append(newTimeslot);
-        updateHoldType();
     }
     $('#add_timeslot').click(function() {
         addTimeslot();
     });
     $(document).on('click', '.remove-timeslot', function() {
         $(this).closest('.schedule-timeslot').remove();
-        updateHoldType();
     });
     $('#clear_schedule').click(function() {
         $('#schedule').empty();
@@ -259,14 +256,13 @@ function updateHoldType() {
         if (AC.holdType === 'schedule') {
             $('#setpoint').prop('readonly', true);
             AC.setpoint = getScheduledTemp();
+            $('#setpoint').val(AC.setpoint);
             $('#temp_hold_options').hide();
         } else if (AC.holdType === 'temporary') {
+            setNextScheduledTime();
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').show();
-            if (!AC.holdUntilTime) {
-                setNextScheduledTime();
-                AC.holdUntilTime = $('#hold_until_time').val();
-            }
+            AC.holdUntilTime = $('#hold_until_time').val();
         } else { 
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').hide();
@@ -302,7 +298,6 @@ function recentTimeslots(direction) {
         recentTimeslotFields({ time: getOneHourLaterTime() });
     }
     $('input[name="hold"][value="temporary"]').prop('checked', true);
-    updateHoldType();
 }
 function setNextScheduledTime() {
     const currentTime = getCurrentTime();
@@ -329,47 +324,61 @@ function runCycleRange(rawSetpoint, mode) {
     const now = Date.now();
     const isCooling = mode === 'cool';
     AC.restSetpoint = isCooling ? AC.rawSetpoint + Number(AC.cycleRange) : AC.rawSetpoint - Number(AC.cycleRange);
-    console.log(`Updated AC.rawSetpoint: ${AC.rawSetpoint}, AC.restSetpoint: ${AC.restSetpoint}`);
-    const useRawSetpoint = isCooling ? 
-        (temp, setpoint) => temp <= setpoint :
-        (temp, setpoint) => temp >= setpoint;
-    const useRestSetpoint = isCooling ?
+    const atRawSetpoint = AC.currentTemp === AC.rawSetpoint;
+    const atRestSetpoint = AC.currentTemp === AC.restSetpoint;
+    const isInRestRange = isCooling ?
         (temp, setpoint) => temp >= setpoint :
         (temp, setpoint) => temp <= setpoint;
-    if (AC.currentTemp !== null) {
-        const atSetpoint = useRawSetpoint(AC.currentTemp, AC.resting ? AC.restSetpoint : AC.rawSetpoint);
-        if (AC.running) {
-            if (!AC.runningSince) {
-                AC.runningSince = now;
-                console.log(`Started running at: ${new Date(AC.runningSince).toISOString()}`);
-            }
-        } else {
-            if (AC.runningSince) {
-                AC.runningSince = null;
-                console.log(`Stopped running at: ${new Date(now).toISOString()}`);
-            }
+    AC.restingDuration = AC.restingSince ? now - AC.restingSince : 0;
+    AC.restingAtSetpointDuration = AC.restingAtSetpointSince ? now - AC.restingAtSetpointSince : 0;
+    AC.runningDuration = AC.runningSince ? now - AC.runningSince : 0;
+    AC.runningAtSetpointDuration = AC.runningAtSetpointSince ? now - AC.runningAtSetpointSince : 0;
+    if (AC.running) {
+        AC.resting = false;
+        AC.restingSince = null;
+        AC.restingAtSetpointSince = null;
+        if (!AC.runningSince) {
+            AC.runningSince = now;
+            console.log(`Started running at: ${new Date(AC.runningSince).toISOString()}`);
         }
-        AC.restingDuration = AC.restingSince ? now - AC.restingSince : 0;
-        AC.runningDuration = AC.runningSince ? now - AC.runningSince : 0;
-        AC.runningAtSetpointDuration = AC.runningAtSetpointSince ? now - AC.runningAtSetpointSince : 0;
-        if (AC.running && atSetpoint) {
+        if (atRawSetpoint) {
             if (!AC.runningAtSetpointSince) {
                 AC.runningAtSetpointSince = now;
                 console.log(`Started running at setpoint: ${new Date(AC.runningAtSetpointSince).toISOString()}`);
             }
-        } else if (!AC.resting && AC.running && atSetpoint && AC.runningAtSetpointDuration >= AC.runningAtSetpointMinTime) {
-            AC.readyToRest = true;
-            console.log(`Ready to enter rest at: ${new Date(AC.restingSince).toISOString()}`);
-        } else if (!AC.resting && !AC.running && atSetpoint && AC.readyToRest) {
-            AC.readyToRest = false;
-            AC.resting = true;
-            AC.restingSince = now;
-            AC.runningAtSetpointSince = null;
-            console.log(`Entered resting state at: ${new Date(AC.restingSince).toISOString()}. New setpoint: ${AC.cycleRangeSetpoint}`);
-        } else if (AC.resting && useRestSetpoint(AC.currentTemp, AC.restSetpoint)) {
+            if (AC.runningAtSetpointDuration >= AC.atSetpointMinTime) {
+                AC.readyToRest = true;
+                console.log(`Ready to enter rest at: ${new Date(AC.restingSince).toISOString()}`);
+            } else {
+                AC.readyToRest = false;
+            }
+        }
+    } else { //running=false
+        AC.runningSince = null;
+        AC.runningAtSetpointSince = null;
+        if (isInRestRange(AC.currentTemp, AC.restSetpoint)) {
+            if (atRestSetpoint) {
+                if (AC.readyToRest) {
+                    if (!AC.restingSince) {
+                        AC.resting = true;
+                        AC.restingSince = now;
+                        console.log(`Started resting at: ${new Date(AC.restingSince).toISOString()}`);
+                    }
+                    if (!AC.restingAtSetpointSince) {
+                        AC.resting = true;
+                        AC.restingAtSetpointSince = now;
+                        console.log(`Started resting at setpoint: ${new Date(AC.restingAtSetpointSince).toISOString()}`);
+                    }
+                }
+            } else { // atRestSetpoint=false
+                AC.readyToRest = false;
+            }
+        } else { // isInRestRange=false
             AC.resting = false;
             AC.restingSince = null;
-            console.log(`Exited resting state at: ${new Date(now).toISOString()}. New setpoint: ${AC.cycleRangeSetpoint}`);
+            AC.restingAtSetpointSince = null;
+            AC.readyToRest = false;
+            console.log(`Exited resting state at: ${new Date(now).toISOString()}`);
         }
     }
     AC.cycleRangeSetpoint = AC.resting ? AC.restSetpoint : AC.rawSetpoint;
@@ -382,23 +391,40 @@ function setThermostat(setpoint, mode) {
     }
 }
 function updateStatus() {
-    $.get('/get_status', function(data) {
-        AC.latestReading = data;
-        AC.running = data.running;
-        AC.currentTemp = data.current_temp;
-        AC.currentSetpoint = data.setpoint;
-        AC.currentMode = data.mode;
-        $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+    return new Promise((resolve, reject) => {
+        let timeoutId;
+        const timeoutPromise = new Promise((resolve, reject) => {
+            timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
+        });
+        const updatePromise = new Promise((resolve) => {
+            $.get('/get_status', function(data) {
+                AC.latestReading = data;
+                AC.running = data.running;
+                AC.currentTemp = data.current_temp;
+                AC.currentSetpoint = data.setpoint;
+                AC.currentMode = data.mode;
+                resolve();
+            });
+        });
+        Promise.race([updatePromise, timeoutPromise])
+            .then(() => {
+                clearTimeout(timeoutId);
+                $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+                const currentTime = getCurrentTime();
+                if (AC.holdType === 'temporary' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
+                    $('input[name="hold"][value="schedule"]').prop('checked', true);
+                    updateHoldType();
+                } else if (AC.holdType === 'schedule' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
+                    updateHoldType();
+                }
+                resolve();
+            })
+            .catch((error) => {
+                clearTimeout(timeoutId);
+                console.log('updateStatus error:', error.message);
+                reject(error);
+            });
     });
-    const currentTime = getCurrentTime();
-    if (AC.holdType === 'temporary' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
-        AC.holdType = 'schedule'; 
-        $('input[name="hold"][value="schedule"]').prop('checked', true);
-        updateHoldType(); 
-        AC.setpoint = getScheduledTemp(); 
-    } else if (AC.holdType === 'schedule') {
-        AC.setpoint = getScheduledTemp();
-    }
 }
 function formatTime(hours, minutes) {
     return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');

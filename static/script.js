@@ -19,7 +19,7 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     runningSince: null,
     runningAtSetpointDuration: 0,
     runningAtSetpointSince: null,
-    atSetpointMinTime: 300000,
+    atSetpointMinTime: 100000,
     cycleRangeSetpoint: 0,
     rawSetpoint: 0,
     restSetpoint: 0,
@@ -46,7 +46,7 @@ setInterval(function() {
     .then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
-                runCycleRange(Number(AC.setpoint), AC.mode);
+                runCycleRange(AC.setpoint, AC.mode);
                 resolve();
             }, 1000);
         });
@@ -183,12 +183,12 @@ setInterval(function() {
     });
 $('#apply').click(function() {
     updateHoldType(); 
-    AC.cycleRange = $('#cycle_range').val();
+    AC.cycleRange = parseInt($('#cycle_range').val(), 10);
     AC.mode = $('input[name="mode"]:checked').val();
     if (AC.holdType === 'schedule') {
         AC.setpoint = getScheduledTemp();
     } else {
-        AC.setpoint = $('#setpoint').val();
+        AC.setpoint = parseInt($('#setpoint').val(), 10);
         if (AC.holdType === 'temporary') {
             AC.holdUntilTime = $('#hold_until_time').val();
         }
@@ -213,7 +213,7 @@ function getScheduledTemp() {
     $('#setpoint').val(AC.setpoint);
     if (!AC.currentSchedule || !AC.currentSchedule.timeslots) {
         console.error('No current schedule or timeslots');
-        return Number(AC.setpoint); 
+        return AC.setpoint; 
     }
     const schedule = AC.currentSchedule.timeslots;
     const currentTime = getCurrentTime();
@@ -323,7 +323,7 @@ function runCycleRange(rawSetpoint, mode) {
     AC.rawSetpoint = rawSetpoint;
     const now = Date.now();
     const isCooling = mode === 'cool';
-    AC.restSetpoint = isCooling ? AC.rawSetpoint + Number(AC.cycleRange) : AC.rawSetpoint - Number(AC.cycleRange);
+    AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.cycleRange : AC.rawSetpoint - AC.cycleRange;
     const atRawSetpoint = AC.currentTemp === AC.rawSetpoint;
     const atRestSetpoint = AC.currentTemp === AC.restSetpoint;
     const isInRestRange = isCooling ?
@@ -410,6 +410,7 @@ function updateStatus() {
             .then(() => {
                 clearTimeout(timeoutId);
                 $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+                $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
                 const currentTime = getCurrentTime();
                 if (AC.holdType === 'temporary' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
                     $('input[name="hold"][value="schedule"]').prop('checked', true);

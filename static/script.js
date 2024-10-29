@@ -31,7 +31,6 @@ function saveAppData() {
 }
 $(document).ready(function() {
     initializeUI();
-    loadScheduleList();
     updateHoldType();
     updateStatus();
 setInterval(function() {
@@ -52,7 +51,6 @@ setInterval(function() {
             }, 1000);
         });
     })
-    .catch(error => console.log('Error in update chain:', error.message));
 }, 60000);
     function initializeUI() {
         $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
@@ -317,18 +315,13 @@ function setNextScheduledTime() {
     });
 }
 function runCycleRange(rawSetpoint, mode) {
-    if (!AC.latestReading) return;
     AC.rawSetpoint = rawSetpoint;
     const now = Date.now();
     const isCooling = mode === 'cool';
     AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.cycleRange : AC.rawSetpoint - AC.cycleRange;
+    const isInRestRange = isCooling ? () => AC.currentTemp >= AC.rawSetpoint : () => AC.currentTemp <= AC.rawSetpoint;
     const isAtRawSetpoint = AC.currentTemp === AC.rawSetpoint;
-    window.isAtRawSetpoint = isAtRawSetpoint;
     const isAtRestSetpoint = AC.currentTemp === AC.restSetpoint;
-    const isInRestRange = isCooling ?
-    () => AC.currentTemp >= AC.rawSetpoint :
-    () => AC.currentTemp <= AC.rawSetpoint;
-    window.isInRestRange = isInRestRange;
     AC.restingDuration = AC.restingSince ? now - AC.restingSince : 0;
     AC.restingAtSetpointDuration = AC.restingAtSetpointSince ? now - AC.restingAtSetpointSince : 0;
     AC.runningDuration = AC.runningSince ? now - AC.runningSince : 0;
@@ -339,16 +332,13 @@ function runCycleRange(rawSetpoint, mode) {
         AC.restingAtSetpointSince = null;
         if (!AC.runningSince) {
             AC.runningSince = now;
-            console.log(`Started running at: ${new Date(AC.runningSince).toISOString()}`);
         }
         if (isAtRawSetpoint) {
             if (!AC.runningAtSetpointSince) {
                 AC.runningAtSetpointSince = now;
-                console.log(`Started running at setpoint: ${new Date(AC.runningAtSetpointSince).toISOString()}`);
             }
             if (AC.runningAtSetpointDuration >= AC.atSetpointMinTime) {
                 AC.readyToRest = true;
-                console.log(`Ready to enter rest at: ${new Date(AC.restingSince).toISOString()}`);
             }
         } else {
             AC.readyToRest = false;
@@ -363,11 +353,9 @@ function runCycleRange(rawSetpoint, mode) {
                     AC.resting = true;
                     if (!AC.restingSince) {
                         AC.restingSince = now;
-                        console.log(`Started resting at: ${new Date(AC.restingSince).toISOString()}`);
                     }
                     if (!AC.restingAtSetpointSince) {
                         AC.restingAtSetpointSince = now;
-                        console.log(`Started resting at setpoint: ${new Date(AC.restingAtSetpointSince).toISOString()}`);
                     }
                 }
             } else { // isAtRawSetpoint=false
@@ -379,12 +367,10 @@ function runCycleRange(rawSetpoint, mode) {
             AC.restingSince = null;
             AC.restingAtSetpointSince = null;
             AC.readyToRest = false;
-            console.log(`Exited resting state at: ${new Date(now).toISOString()}`);
         }
     }
     AC.setpointToUse = AC.resting ? AC.restSetpoint : AC.rawSetpoint;
     setThermostat(AC.setpointToUse, mode);
-    console.log(`Set thermostat to: ${AC.setpointToUse}, Mode: ${mode}`);
 }
 function setThermostat(setpoint, mode) {
     if (mode !== AC.currentMode || AC.setpointToUse !== AC.currentSetpoint) {
@@ -423,7 +409,6 @@ function updateStatus() {
             })
             .catch((error) => {
                 clearTimeout(timeoutId);
-                console.log('updateStatus error:', error.message);
                 reject(error);
             });
     });

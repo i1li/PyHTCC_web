@@ -20,9 +20,10 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     runningAtSetpointDuration: 0,
     runningAtSetpointSince: null,
     atSetpointMinTime: 100000,
-    cycleRangeSetpoint: 0,
+    setpointToUse: 0,
     rawSetpoint: 0,
     restSetpoint: 0,
+    runningAtSetpointSince: 0,
     restingAtSetpointDuration: 0,
 };
 function saveAppData() {
@@ -182,7 +183,7 @@ setInterval(function() {
         updateHoldType();
     });
 $('#apply').click(function() {
-    updateHoldType(); 
+    updateHoldType();
     AC.cycleRange = parseInt($('#cycle_range').val(), 10);
     AC.mode = $('input[name="mode"]:checked').val();
     if (AC.holdType === 'schedule') {
@@ -271,15 +272,8 @@ function updateHoldType() {
 $('input[name="hold"]').change(function() {
     updateHoldType();
 });
-function recentTimeslotFields(timeslot) {
-    $('#hold_until_time').val(timeslot.time);
-    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
-    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
-    AC.holdUntilTime = timeslot.time;
-}
-$('#next_timeslot, #prev_timeslot').click(function() {
-    const direction = $(this).attr('id') === 'next_timeslot' ? 'next' : 'prev';
-    recentTimeslots(direction);
+$('input[id="hold_until_time"]').change(function() {
+    AC.holdUntilTime = $('#hold_until_time').val();
 });
 function findNextTimeslot(currentTime, timeslots, direction) {
     if (direction === 'prev') {
@@ -297,8 +291,17 @@ function recentTimeslots(direction) {
     } else {
         recentTimeslotFields({ time: getOneHourLaterTime() });
     }
-    $('input[name="hold"][value="temporary"]').prop('checked', true);
 }
+function recentTimeslotFields(timeslot) {
+    $('#hold_until_time').val(timeslot.time);
+    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
+    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
+    AC.holdUntilTime = timeslot.time;
+}
+$('#next_timeslot, #prev_timeslot').click(function() {
+    const direction = $(this).attr('id') === 'next_timeslot' ? 'next' : 'prev';
+    recentTimeslots(direction);
+});
 function setNextScheduledTime() {
     const currentTime = getCurrentTime();
     let nextTimeslot = null;
@@ -312,11 +315,6 @@ function setNextScheduledTime() {
             };
         }
     });
-    if (nextTimeslot) {
-        recentTimeslotFields(nextTimeslot);
-    } else {
-        recentTimeslotFields({ time: getOneHourLaterTime() });
-    }
 }
 function runCycleRange(rawSetpoint, mode) {
     if (!AC.latestReading) return;
@@ -324,11 +322,13 @@ function runCycleRange(rawSetpoint, mode) {
     const now = Date.now();
     const isCooling = mode === 'cool';
     AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.cycleRange : AC.rawSetpoint - AC.cycleRange;
-    const atRawSetpoint = AC.currentTemp === AC.rawSetpoint;
-    const atRestSetpoint = AC.currentTemp === AC.restSetpoint;
+    const isAtRawSetpoint = AC.currentTemp === AC.rawSetpoint;
+    window.isAtRawSetpoint = isAtRawSetpoint;
+    const isAtRestSetpoint = AC.currentTemp === AC.restSetpoint;
     const isInRestRange = isCooling ?
-        (temp, setpoint) => temp >= setpoint :
-        (temp, setpoint) => temp <= setpoint;
+    () => AC.currentTemp >= AC.rawSetpoint :
+    () => AC.currentTemp <= AC.rawSetpoint;
+    window.isInRestRange = isInRestRange;
     AC.restingDuration = AC.restingSince ? now - AC.restingSince : 0;
     AC.restingAtSetpointDuration = AC.restingAtSetpointSince ? now - AC.restingAtSetpointSince : 0;
     AC.runningDuration = AC.runningSince ? now - AC.runningSince : 0;
@@ -341,7 +341,7 @@ function runCycleRange(rawSetpoint, mode) {
             AC.runningSince = now;
             console.log(`Started running at: ${new Date(AC.runningSince).toISOString()}`);
         }
-        if (atRawSetpoint) {
+        if (isAtRawSetpoint) {
             if (!AC.runningAtSetpointSince) {
                 AC.runningAtSetpointSince = now;
                 console.log(`Started running at setpoint: ${new Date(AC.runningAtSetpointSince).toISOString()}`);
@@ -349,29 +349,30 @@ function runCycleRange(rawSetpoint, mode) {
             if (AC.runningAtSetpointDuration >= AC.atSetpointMinTime) {
                 AC.readyToRest = true;
                 console.log(`Ready to enter rest at: ${new Date(AC.restingSince).toISOString()}`);
-            } else {
-                AC.readyToRest = false;
             }
+        } else {
+            AC.readyToRest = false;
+            AC.runningAtSetpointSince = null;
         }
     } else { //running=false
         AC.runningSince = null;
         AC.runningAtSetpointSince = null;
-        if (isInRestRange(AC.currentTemp, AC.restSetpoint)) {
-            if (atRestSetpoint) {
+        if (isInRestRange()) {
+            if (isAtRawSetpoint) {
                 if (AC.readyToRest) {
+                    AC.resting = true;
                     if (!AC.restingSince) {
-                        AC.resting = true;
                         AC.restingSince = now;
                         console.log(`Started resting at: ${new Date(AC.restingSince).toISOString()}`);
                     }
                     if (!AC.restingAtSetpointSince) {
-                        AC.resting = true;
                         AC.restingAtSetpointSince = now;
                         console.log(`Started resting at setpoint: ${new Date(AC.restingAtSetpointSince).toISOString()}`);
                     }
                 }
-            } else { // atRestSetpoint=false
+            } else { // isAtRawSetpoint=false
                 AC.readyToRest = false;
+                AC.restingAtSetpointSince = null;
             }
         } else { // isInRestRange=false
             AC.resting = false;
@@ -381,13 +382,13 @@ function runCycleRange(rawSetpoint, mode) {
             console.log(`Exited resting state at: ${new Date(now).toISOString()}`);
         }
     }
-    AC.cycleRangeSetpoint = AC.resting ? AC.restSetpoint : AC.rawSetpoint;
-    setThermostat(AC.cycleRangeSetpoint, mode);
-    console.log(`Set thermostat to: ${AC.cycleRangeSetpoint}, Mode: ${mode}`);
+    AC.setpointToUse = AC.resting ? AC.restSetpoint : AC.rawSetpoint;
+    setThermostat(AC.setpointToUse, mode);
+    console.log(`Set thermostat to: ${AC.setpointToUse}, Mode: ${mode}`);
 }
 function setThermostat(setpoint, mode) {
-    if (mode !== AC.currentMode || AC.cycleRangeSetpoint !== AC.currentSetpoint) {
-        $.post('/set_update', { mode: mode, setpoint: AC.cycleRangeSetpoint });
+    if (mode !== AC.currentMode || AC.setpointToUse !== AC.currentSetpoint) {
+        $.post('/set_update', { mode: mode, setpoint: AC.setpointToUse });
     }
 }
 function updateStatus() {

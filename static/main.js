@@ -16,7 +16,7 @@ setInterval(function() {
     .then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
-                runCycleRange(AC.setpoint, AC.mode);
+                hysteresis(AC.setpoint, AC.mode);
                 resolve();
             }, 1000);
         });
@@ -26,7 +26,8 @@ setInterval(function() {
         $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
         $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
         $('#setpoint').val(AC.setpoint);
-        $('#cycle_range').val(AC.cycleRange);
+        $('#passive_hysteresis').val(AC.passiveHysteresis);
+        $('#active_hysteresis').val(AC.activeHysteresis);
         loadScheduleList();
         if (AC.currentScheduleName) {
             $('#load_schedule').val(AC.currentScheduleName);
@@ -152,7 +153,8 @@ setInterval(function() {
     });
 $('#apply').click(function() {
     updateHoldType();
-    AC.cycleRange = parseInt($('#cycle_range').val(), 10);
+    AC.passiveHysteresis = parseInt($('#passive_hysteresis').val(), 10);
+    AC.activeHysteresis = parseInt($('#active_hysteresis').val(), 10);
     AC.mode = $('input[name="mode"]:checked').val();
     if (AC.holdType === 'schedule') {
         AC.setpoint = getScheduledTemp();

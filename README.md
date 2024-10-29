@@ -1,6 +1,6 @@
 ### PyHTCC_web
 
-A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats.
+A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats. Active and passive hysteresis.
 
 Limitations Addressed: The Honeywell app only alows 1 saved schedule, 4 schedule timeslots per day, and must be in intervals of 15 minutes.
 
@@ -9,7 +9,7 @@ Limitations Addressed: The Honeywell app only alows 1 saved schedule, 4 schedule
 - Save & choose from multiple schedules
 - Import & export saved schedules
 - Choose to follow the set schedule, temporarily hold a temperature, or permanently hold
-- [Cycle Range](#what-is-cycle-range) AKA hysteresis or deadband
+- [Hysteresis (AKA deadband)](#what-is-hysteresis)
 
 ## Getting Started
 
@@ -24,38 +24,15 @@ Update the `.env` file with the credentials you use for your Honeywell app or th
 ### Run the Application
 Run `pyhtcc_web.py`, then open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory.
 
-## What is Cycle Range?
-Cycle Range is the amount of degrees away from the setpoint allowed while in rest between cycles before starting another cycle of cooling/heating to setpoint. 
+## What is Hysteresis?
+<a href="https://search.brave.com/search?q=hvac+deadband+hysteresis&source=web&summary=1&summary_og=391a2b9ee4a6faf7cb0377">Hysteresis (AKA deadband)</a> is the amount of degrees away from the setpoint allowed between active & rest cycles.
 
-- Optional field: leave this value blank or `0` for default behavior.
+Active Hysteresis is the amount of degrees beyond setpoint system run to before switching to rest.
+
+Passive Hysteresis is the amount of degrees beyond setpoint system rests before switching on again.
+
+- Optional fields: leave blank or `0` for default behavior.
 - Useful to reduce frequent on/off cycles, especially when the output of the unit is high relative to the space controlled.
 
-This is related to the <a href="https://search.brave.com/search?q=hvac+deadband+hysteresis&source=web&summary=1&summary_og=391a2b9ee4a6faf7cb0377">HVAC terms "hysteresis" & "deadband"</a>, with the difference being that they're typically split evenly in both directions of the setpoint, while Cycle Range applies directionally based on cool or heat mode. For this reason a more descriptive term might be "Rest Cycle Tolerance Range". The system cools/heats until reaching the setpoint, and then rests until the temperature reaches the set temperature plus (or minus in the case of heat) the Cycle Range.
-
-### Code Explanation
-The `runCycleRange` function uses `restTemp`, encapsulated in the following line of code:
-```javascript
-restTemp = mode === 'cool' ? setpoint + cycleRange : setpoint - cycleRange;
-```
-This means:
-- When the mode is **cool**, `restTemp` is the setpoint plus the cycleRange.
-- When the mode is **heat**, `restTemp` is the setpoint minus the cycleRange.
-
 ### State Transitions
-The transitions in the `runCycleRange` function are based on updates of `running` and whether it is switching states while reaching or departing from the setpoint or rest temperature.
-
-1. **For Cooling Mode:**
-   - The system enters the resting state when `running` changes from true to false while the current temperature is at or below the setpoint.
-   - It exits the resting state and starts cooling again when the current temperature reaches or exceeds the rest temperature.
-
-2. **For Heating Mode:**
-   - The system enters the resting state when `running` changes from true to false while the current temperature is at or above the setpoint.
-   - It exits the resting state and starts heating again when the current temperature drops to or below the rest temperature.
-
-### Variable Updates
-The `isResting` and `restingSince` variables should be updated as follows:
-- **isResting** is set to `true` when entering the resting state (when `running` becomes false at the appropriate temperature).
-- **restingSince** is set to the current time (`Date.now()`) when entering the resting state.
-- Both are reset (`isResting` to `false` and `restingSince` to `null`) when exiting the resting state.
-
-These transitions are dependent on both the `running` state and temperature conditions, ensuring that the system cycles appropriately based on its actual running state and current temperature in relation to both setpoint and rest temperature.
+The transitions in the `hysteresis` function are based on updates of `running` and whether it is switching states while reaching or departing from the temp limit ranges based on heat/cool mode, and rest/running state.

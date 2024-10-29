@@ -21,8 +21,10 @@
 <label for="setpoint">Set Temperature:</label>
 <input type="number" id="setpoint" placeholder="Set Temperature" />
 <br>
-<label for="cycle_range">Set <a href="#what-is-cycle-range" title="What is Cycle Range?">Cycle Range</a>:</label>
-<input type="number" id="cycle_range" placeholder="Cycle Range (optional)" />
+<label for="passive_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
+<input type="number" id="passive_hysteresis" placeholder="(optional)" />
+<label for="active_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
+<input type="number" id="active_hysteresis" placeholder="(optional)" />
 <div class="hold-container">
     <div class="hold-option">
         <input type="radio" id="follow_schedule" name="hold" value="schedule">
@@ -62,11 +64,9 @@
 <button id="add_timeslot">Add Timeslot</button>
 <button id="clear_schedule">Clear Schedule</button>
 <button id="save_schedule">Save Schedule</button>
-<center><div id="status">Status: Loading...</div>
-<div id="what-is-cycle-range"><h4>What is Cycle Range?</h4><p>
-<a href="https://github.com/i1li/PyHTCC_web#what-is-cycle-range">Cycle Range (AKA hysteresis or deadband)</a> is the amount of degrees away from setpoint allowed while in rest between cycles, before starting another cycle of cooling/heating to setpoint. Leave this value blank or 0 for default behavior. Useful to reduce frequent on/off cycles, such as when the output of the unit is high relative to the space controlled. The system will cool/heat until reaching setpoint, and then rests until temp reaches the set temp plus (or minus in the case of heat) the Cycle Range.</p></div></center>
+<center><div id="status">Status: Loading...</div></center>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
-<script src="{{ url_for('static', filename='cycle-range.js') }}"></script>
+<script src="{{ url_for('static', filename='hysteresis.js') }}"></script>
 </body>
 </html>

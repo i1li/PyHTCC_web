@@ -39,46 +39,57 @@ def set_thermostat(zone_name, setpoint, mode):
             zone.set_permanent_heat_setpoint(setpoint)
     except Exception as e:
         print(f"Error: {e}")
-last_update = None
-last_update_confirmation = None
+thermostat_status = {
+    'current_temp': None,
+    'setpoint': None,
+    'mode': None,
+    'running': None,
+    'last_update': None,
+    'update_status': None
+}
 @app.route('/get_status')
 def get_status():
-    global last_update, last_update_confirmation
+    global thermostat_status
     current_temp, setpoint, mode, running = read_thermostat(zone['Name'])
-    status_data = {
+    thermostat_status.update({
         'current_temp': current_temp,
         'setpoint': setpoint,
         'mode': mode,
         'running': running
-    }
-    if last_update:
-        time_since_update = time.time() - last_update['timestamp']
+    })
+    if thermostat_status['last_update']:
+        time_since_update = time.time() - thermostat_status['last_update']['timestamp']
         if time_since_update < 300:
-            if last_update['setpoint'] == setpoint and last_update['mode'] == mode:
-                status_data['update_status'] = 'confirmed'
-                if last_update_confirmation != last_update['timestamp']:
-                    print(f"Update applied at {time.strftime('%H:%M:%S', time.localtime(last_update['timestamp']))}: mode={mode}, setpoint={setpoint}")
-                    last_update_confirmation = last_update['timestamp']
+            if (thermostat_status['last_update']['setpoint'] == setpoint and 
+                thermostat_status['last_update']['mode'] == mode):
+                thermostat_status['update_status'] = 'confirmed'
+                if thermostat_status.get('last_update_confirmation') != thermostat_status['last_update']['timestamp']:
+                    print(f"Update applied at {time.strftime('%H:%M:%S', time.localtime(thermostat_status['last_update']['timestamp']))}: mode={mode}, setpoint={setpoint}")
+                    thermostat_status['last_update_confirmation'] = thermostat_status['last_update']['timestamp']
             else:
-                status_data['update_status'] = 'pending'
-            status_data['last_update'] = last_update
+                thermostat_status['update_status'] = 'pending'
         else:
-            last_update = None
-    return jsonify(status_data)
+            thermostat_status['last_update'] = None
+            thermostat_status['update_status'] = None
+    return jsonify(thermostat_status)
 @app.route('/set_update', methods=['POST'])
 def set_update():
-    global last_update
+    global thermostat_status
     new_setpoint = float(request.form['setpoint'])
     new_mode = request.form['mode']
-    current_temp, current_setpoint, current_mode, current_running = read_thermostat(zone['Name'])
+    if thermostat_status['current_temp'] is None:
+        return jsonify(success=False, error="Current status not available", updated=False), 400
+    current_setpoint = thermostat_status['setpoint']
+    current_mode = thermostat_status['mode']
     if new_mode != current_mode or new_setpoint != current_setpoint:
         try:
             set_thermostat(zone['Name'], new_setpoint, new_mode)
-            last_update = {
+            thermostat_status['last_update'] = {
                 'setpoint': new_setpoint,
                 'mode': new_mode,
                 'timestamp': time.time()
             }
+            thermostat_status['update_status'] = 'pending'
             print(f"Update requested: mode={new_mode}, setpoint={new_setpoint}")
             return jsonify(success=True, updated=True)
         except Exception as e:

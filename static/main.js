@@ -1,4 +1,3 @@
-
 $(document).ready(function() {
     initializeUI();
     updateHoldType();
@@ -88,6 +87,7 @@ setInterval(function() {
                 console.error('Invalid schedule format');
             }
             $('#load_schedule').val(scheduleName);
+            updateHoldType();
         }
     }
     $('#load_schedule').change(function() {
@@ -160,41 +160,7 @@ $('#apply').click(function() {
     hysteresis(AC.setpoint, AC.mode);
 });
 });
-function getScheduledTemp() {
-    $('#setpoint').val(AC.setpoint);
-    if (!AC.currentSchedule || !AC.currentSchedule.timeslots) {
-        console.error('No current schedule or timeslots');
-        return AC.setpoint; 
-    }
-    const schedule = AC.currentSchedule.timeslots;
-    const currentTime = getCurrentTime();
-    const sortedSchedule = schedule.sort((a, b) => a.time.localeCompare(b.time));
-    for (let i = sortedSchedule.length - 1; i >= 0; i--) {
-        if (sortedSchedule[i].time <= currentTime) {
-            if (AC.mode === 'cool' && sortedSchedule[i].coolTemp) {
-                AC.scheduledTemp = Number(sortedSchedule[i].coolTemp);
-                return AC.scheduledTemp;
-            } else if (AC.mode === 'heat' && sortedSchedule[i].heatTemp) {
-                AC.scheduledTemp = Number(sortedSchedule[i].heatTemp);
-                return AC.scheduledTemp;
-            }
-        }
-    }
-    if (sortedSchedule.length > 0) {
-        const lastTimeslot = sortedSchedule[sortedSchedule.length - 1];
-        if (AC.mode === 'cool' && lastTimeslot.coolTemp) {
-            AC.scheduledTemp = Number(lastTimeslot.coolTemp);
-        } else if (AC.mode === 'heat' && lastTimeslot.heatTemp) {
-            AC.scheduledTemp = Number(lastTimeslot.heatTemp);
-        } else {
-            AC.scheduledTemp = $('#setpoint').val();
-        }
-    } else {
-        AC.scheduledTemp = $('#setpoint').val();
-    }
-    return AC.scheduledTemp;
-}
-function getScheduleTimeslots() {
+function getScheduleInfo() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
         const time = $(this).find('input[type="time"]').val();
@@ -204,18 +170,59 @@ function getScheduleTimeslots() {
             timeslots.push({ time, heatTemp, coolTemp });
         }
     });
-    return timeslots.sort((a, b) => a.time.localeCompare(b.time));
-}
-function recentTimeslots(direction) {
-    const timeslots = getScheduleTimeslots();
-    const newTimeslot = findNextTimeslot(AC.holdUntilTime, timeslots, direction);
-    if (newTimeslot) {
-        recentTimeslotFields(newTimeslot);
+    const sortedTimeslots = timeslots.sort((a, b) => a.time.localeCompare(b.time));
+    const currentTime = getCurrentTime();
+    let currentTimeslot = null;
+    let nextTimeslot = null;
+    let scheduledTemp = AC.setpoint;
+    if (sortedTimeslots.length > 0) {
+        for (let i = 0; i < sortedTimeslots.length; i++) {
+            if (sortedTimeslots[i].time <= currentTime) {
+                currentTimeslot = sortedTimeslots[i];
+                nextTimeslot = sortedTimeslots[i + 1] || sortedTimeslots[0];
+            } else {
+                if (!currentTimeslot) {
+                    currentTimeslot = sortedTimeslots[sortedTimeslots.length - 1];
+                }
+                nextTimeslot = sortedTimeslots[i];
+                break;
+            }
+        }
+        if (currentTimeslot) {
+            if (AC.mode === 'cool' && currentTimeslot.coolTemp) {
+                scheduledTemp = Number(currentTimeslot.coolTemp);
+            } else if (AC.mode === 'heat' && currentTimeslot.heatTemp) {
+                scheduledTemp = Number(currentTimeslot.heatTemp);
+            }
+        }
     } else {
-        recentTimeslotFields({ time: getOneHourLaterTime() });
+        nextTimeslot = { time: getOneHourLaterTime() };
+    }
+    return {
+        scheduledTemp: scheduledTemp,
+        timeslots: sortedTimeslots,
+        currentTimeslot: currentTimeslot,
+        nextTimeslot: nextTimeslot
+    };
+}
+function populateTimeslotNavigation(timeslot) {
+    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
+    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
+    $('#hold_until_time').val(timeslot.time);
+    AC.holdUntilTime = timeslot.time;
+}
+function timeslotNavigation(direction) {
+    const sched = getScheduleInfo();
+    const timeslots = sched.timeslots;
+    const currentTime = getCurrentTime();
+    const newTimeslot = findTimeslot(AC.holdUntilTime, timeslots, direction);
+    if (newTimeslot) {
+        populateTimeslotNavigation(newTimeslot);
+    } else {
+        populateTimeslotNavigation({ time: getOneHourLaterTime() });
     }
 }
-function findNextTimeslot(currentTime, timeslots, direction) {
+function findTimeslot(currentTime, timeslots, direction) {
     if (direction === 'prev') {
         timeslots = timeslots.slice().reverse();
     }
@@ -225,33 +232,8 @@ function findNextTimeslot(currentTime, timeslots, direction) {
 }
 $('#next_timeslot, #prev_timeslot').click(function() {
     const direction = $(this).attr('id') === 'next_timeslot' ? 'next' : 'prev';
-    recentTimeslots(direction);
+    timeslotNavigation(direction);
 });
-function recentTimeslotFields(timeslot) {
-    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
-    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
-    $('#hold_until_time').val(timeslot.time);
-    AC.holdUntilTime = timeslot.time;
-}
-function setNextScheduledTime() {
-    const currentTime = getCurrentTime();
-    let nextTimeslot = null;
-    $('.schedule-timeslot').each(function() {
-        const timeslotTime = $(this).find('input[type="time"]').val();
-        if (timeslotTime > currentTime && (!nextTimeslot || timeslotTime < nextTimeslot.time)) {
-            nextTimeslot = {
-                time: timeslotTime,
-                heatTemp: $(this).find('input[placeholder="Heat Temp"]').val(),
-                coolTemp: $(this).find('input[placeholder="Cool Temp"]').val()
-            };
-        }
-    });
-    if (nextTimeslot) {
-        recentTimeslotFields(nextTimeslot);
-    } else {
-        recentTimeslotFields({ time: getOneHourLaterTime() });
-    }
-}
 function updateHoldType() {
     AC.holdType = $('input[name="hold"]:checked').val();
     const hasSchedule = $('.schedule-timeslot').length > 0;
@@ -265,10 +247,12 @@ function updateHoldType() {
         if (AC.holdType === 'schedule') {
             $('#setpoint').prop('readonly', true);
             $('#temp_hold_options').hide();
-            AC.setpoint = getScheduledTemp();
+            const sched = getScheduleInfo();
+            AC.setpoint = sched.scheduledTemp;
             $('#setpoint').val(AC.setpoint);
         } else if (AC.holdType === 'temporary') {
-            setNextScheduledTime();
+            const sched = getScheduleInfo();
+            populateTimeslotNavigation(sched.nextTimeslot);
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').show();
             AC.holdUntilTime = $('#hold_until_time').val();

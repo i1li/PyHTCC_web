@@ -64,7 +64,7 @@ def get_status():
                 thermostat_status['last_update']['mode'] == mode):
                 thermostat_status['update_status'] = 'confirmed'
                 if thermostat_status.get('last_update_confirmation') != thermostat_status['last_update']['timestamp']:
-                    print(f"Update applied at {time.strftime('%H:%M:%S', time.localtime(thermostat_status['last_update']['timestamp']))}: mode={mode}, setpoint={setpoint}")
+                    print(f"Update confirmed at {time.strftime('%H:%M:%S', time.localtime(thermostat_status['last_update']['timestamp']))}: mode={mode}, setpoint={setpoint}")
                     thermostat_status['last_update_confirmation'] = thermostat_status['last_update']['timestamp']
             else:
                 thermostat_status['update_status'] = 'pending'
@@ -77,8 +77,6 @@ def set_update():
     global thermostat_status
     new_setpoint = float(request.form['setpoint'])
     new_mode = request.form['mode']
-    if thermostat_status['current_temp'] is None:
-        return jsonify(success=False, error="Current status not available", updated=False), 400
     current_setpoint = thermostat_status['setpoint']
     current_mode = thermostat_status['mode']
     if new_mode != current_mode or new_setpoint != current_setpoint:

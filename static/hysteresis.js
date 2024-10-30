@@ -45,6 +45,15 @@ function hysteresis(rawSetpoint, mode) {
                 }
             } else { // isAtActiveSetpoint=false
                 AC.readyToRest = false;
+            }
+            if (isAtRestSetpoint) {
+                if (!AC.restingAtEdgeSince) {
+                    AC.restingAtEdgeSince = now;
+                }
+                if (AC.restingAtEdgeFor >= AC.atEdgeMinTime) {
+                    AC.resting = false;
+                }
+            } else {
                 AC.restingAtEdgeSince = null;
             }
         } else { // isInRestRange=false

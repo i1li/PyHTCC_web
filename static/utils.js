@@ -24,7 +24,8 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     runningSince: 0,
     runningAtEdgeSince: 0,
     runningAtEdgeFor: 0,
-    atEdgeMinTime: 500000,
+    atEdgeMinTime: 300000,
+    atEdgeMaxTime: 500000,
     latestReading: null,
 };
 function saveAppData() {

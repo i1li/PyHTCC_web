@@ -50,7 +50,7 @@ function hysteresis(rawSetpoint, mode) {
                 if (!AC.restingAtEdgeSince) {
                     AC.restingAtEdgeSince = now;
                 }
-                if (AC.restingAtEdgeFor >= AC.atEdgeMinTime) {
+                if (AC.restingAtEdgeFor >= AC.atEdgeMaxTime) {
                     AC.resting = false;
                 }
             } else {
@@ -58,9 +58,6 @@ function hysteresis(rawSetpoint, mode) {
             }
         } else { // isInRestRange=false
             AC.resting = false;
-            AC.restingSince = null;
-            AC.restingAtEdgeSince = null;
-            AC.readyToRest = false;
         }
     }
     AC.hysteresisSetpoint = AC.resting ? AC.restSetpoint : AC.activeSetpoint;

@@ -198,16 +198,34 @@ function populateTimeslotNavigation(timeslot) {
     $('#hold_until').val(timeslot.time);
     AC.holdUntil = timeslot.time;
 }
-function timeslotNavigation(direction) {
+let currentTimeslotIndex = -1;
+function initializeTimeslotIndex() {
     const sched = getScheduleInfo();
     const timeslots = sched.timeslots;
     const currentTime = getCurrentTime();
-    const newTimeslot = findTimeslot(AC.holdUntil, timeslots, direction);
+    currentTimeslotIndex = timeslots.findIndex(timeslot => timeslot.time > currentTime);
+    if (currentTimeslotIndex === -1) {
+        currentTimeslotIndex = 0;
+    }
+}
+function timeslotNavigation(direction) {
+    const sched = getScheduleInfo();
+    const timeslots = sched.timeslots;
+    if (currentTimeslotIndex === -1) {
+        initializeTimeslotIndex();
+    }
+    if (direction === 'next') {
+        currentTimeslotIndex = (currentTimeslotIndex + 1) % timeslots.length;
+    } else {
+        currentTimeslotIndex = (currentTimeslotIndex - 1 + timeslots.length) % timeslots.length;
+    }
+    const newTimeslot = timeslots[currentTimeslotIndex];
     if (newTimeslot) {
         populateTimeslotNavigation(newTimeslot);
     } else {
         populateTimeslotNavigation({ time: getOneHourLaterTime() });
     }
+    AC.holdUntil = newTimeslot ? newTimeslot.time : getOneHourLaterTime();
 }
 function findTimeslot(currentTime, timeslots, direction) {
     if (direction === 'prev') {

@@ -19,44 +19,44 @@
 <div class="row"><div class="column">
 <label for="setpoint">Set Temperature:</label>
 <input type="number" id="setpoint" />
-</div><div class="column"><label for="passive_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
-<input type="number" id="passive_hysteresis" placeholder="(optional)" />
-</div><div class="column"><label for="active_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
-<input type="number" id="active_hysteresis" placeholder="(optional)" />
+</div><div class="column"><label for="passive-hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
+<input type="number" id="passive-hysteresis" placeholder="(optional)" />
+</div><div class="column"><label for="active-hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
+<input type="number" id="active-hysteresis" placeholder="(optional)" />
 </div></div>
 <div class="hold-container">
 <div class="hold-option">
-<input type="radio" id="follow_schedule" name="hold" value="schedule">
-<label for="follow_schedule">Follow Schedule</label>
+<input type="radio" id="follow-schedule" name="hold" value="schedule">
+<label for="follow-schedule">Follow Schedule</label>
 </div><div class="hold-option">
-<input type="radio" id="temp_hold" name="hold" value="temporary">
-<label for="temp_hold">Temporary Hold</label>
+<input type="radio" id="temp-hold" name="hold" value="temporary">
+<label for="temp-hold">Temporary Hold</label>
 </div><div class="hold-option">
-<input type="radio" id="perm_hold" name="hold" value="permanent" checked>
-<label for="perm_hold">Permanent Hold</label>
+<input type="radio" id="perm-hold" name="hold" value="permanent" checked>
+<label for="perm-hold">Permanent Hold</label>
 </div></div><div class="schedule-controls">
-<select id="load_schedule">
+<select id="load-schedule">
 <option value="">Load Saved Schedule</option></select>
 <button id="importSchedules">Import Schedules</button>
 <input type="file" id="importFile" style="display:none;" accept=".json">
 <button id="exportSchedules">Export Schedules</button>
-</div><div id="temp_hold_options">
-<label for="hold_until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
-<a id="prev_timeslot">⏮Previous Schedule Timeslot</a> | <a id="next_timeslot">Next Schedule Timeslot⏭</a><br>
-<input type="time" id="hold_until" readonly />
+</div><div id="temp-hold-options">
+<label for="hold-until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
+<a id="prev-timeslot">⏮Previous Schedule Timeslot</a> | <a id="next-timeslot">Next Schedule Timeslot⏭</a><br>
+<input type="time" id="hold-until" readonly />
 <div class="row"><div class="column">
-<label for="next_heat_temp">Heat Temp:</label>
-<input type="number" id="next_heat_temp" readonly />
+<label for="next-heat-temp">Heat Temp:</label>
+<input type="number" id="next-heat-temp" readonly />
 </div><div class="column">
-<label for="next_cool_temp">Cool Temp:</label>
-<input type="number" id="next_cool_temp" readonly />
+<label for="next-cool-temp">Cool Temp:</label>
+<input type="number" id="next-cool-temp" readonly />
 </div></div></div>
 <button id="apply">Apply Changes</button>
 <h4>Schedule</h4></center>
 <div id="schedule"></div>
-<button id="add_timeslot">Add Timeslot</button>
-<button id="clear_schedule">Clear Schedule</button>
-<button id="save_schedule">Save Schedule</button>
+<button id="add-timeslot">Add Timeslot</button>
+<button id="clear-schedule">Clear Schedule</button>
+<button id="save-schedule">Save Schedule</button>
 <center><div id="status">Status: Loading...</div></center>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>

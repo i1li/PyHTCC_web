@@ -2,45 +2,45 @@ $(document).ready(function() {
     initializeUI();
     updateHoldType();
     updateStatus();
-setInterval(function() {
-    updateStatus()
-    .then(() => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                saveAppData();
-                resolve();
-            }, 1000);
-        });
-    })
-    .then(() => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                hysteresis(AC.setpoint, AC.mode);
-                resolve();
-            }, 1000);
-        });
-    })
-}, 60000);
+    setInterval(function() {
+        updateStatus()
+        .then(() => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    saveAppData();
+                    resolve();
+                }, 1000);
+            });
+        })
+        .then(() => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    hysteresis(AC.setpoint, AC.mode);
+                    resolve();
+                }, 1000);
+            });
+        })
+    }, 60000);
     function initializeUI() {
         $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
         $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
         $('#setpoint').val(AC.setpoint);
-        $('#passive_hysteresis').val(AC.passiveHysteresis);
-        $('#active_hysteresis').val(AC.activeHysteresis);
+        $('#passive-hysteresis').val(AC.passiveHysteresis);
+        $('#active-hysteresis').val(AC.activeHysteresis);
         loadScheduleList();
         if (AC.currentScheduleName) {
-            $('#load_schedule').val(AC.currentScheduleName);
+            $('#load-schedule').val(AC.currentScheduleName);
             loadSchedule(AC.currentScheduleName);
         }
     }
     function saveSchedule() {
-        const scheduleInfo = getScheduleInfo();
+        const sched = getScheduleInfo();
         if (AC.currentScheduleName) {
-            AC.schedules[AC.currentScheduleName] = { timeslots: scheduleInfo.timeslots };
+            AC.schedules[AC.currentScheduleName] = { timeslots: sched.timeslots };
         }
-        AC.currentSchedule = { timeslots: scheduleInfo.timeslots };
+        AC.currentSchedule = { timeslots: sched.timeslots };
     }
-    $('#save_schedule').click(function() {
+    $('#save-schedule').click(function() {
         const name = prompt("Enter a name for this schedule:", AC.currentScheduleName);
         if (name) {
             AC.currentScheduleName = name;
@@ -49,7 +49,7 @@ setInterval(function() {
         }
     });
     function loadScheduleList() {
-        const $loadSelect = $('#load_schedule');
+        const $loadSelect = $('#load-schedule');
         $loadSelect.find('option:not(:first)').remove();
         Object.keys(AC.schedules).forEach(name => {
             $loadSelect.append($('<option>', { value: name, text: name }));
@@ -69,11 +69,11 @@ setInterval(function() {
             } else {
                 console.error('Invalid schedule format');
             }
-            $('#load_schedule').val(scheduleName);
+            $('#load-schedule').val(scheduleName);
             updateHoldType();
         }
     }
-    $('#load_schedule').change(function() {
+    $('#load-schedule').change(function() {
         const selectedSchedule = $(this).val();
         if (selectedSchedule) {
             loadSchedule(selectedSchedule);
@@ -87,21 +87,21 @@ setInterval(function() {
         </div><div class="column">
         <button class="remove-timeslot">Remove Timeslot</button>
         </div></div><div class="row"><div class="column">
-        <label for="heat_temp">Heat Temp:</label>
-        <input type="number" class="heat_input" value="${timeslot.heatTemp || ''}">
+        <label for="heat-temp">Heat Temp:</label>
+        <input type="number" class="heat-input" value="${timeslot.heatTemp || ''}">
         </div><div class="column">
-        <label for="cool_temp">Cool Temp:</label>
-        <input type="number" class="cool_input" value="${timeslot.coolTemp || ''}">
+        <label for="cool-temp">Cool Temp:</label>
+        <input type="number" class="cool-input" value="${timeslot.coolTemp || ''}">
         </div></div></div>`;
         $('#schedule').append(newTimeslot);
     }
-    $('#add_timeslot').click(function() {
+    $('#add-timeslot').click(function() {
         addTimeslot();
     });
     $(document).on('click', '.remove-timeslot', function() {
         $(this).closest('.schedule-timeslot').remove();
     });
-    $('#clear_schedule').click(function() {
+    $('#clear-schedule').click(function() {
         $('#schedule').empty();
     });
     $('#importSchedules').click(function() {
@@ -138,8 +138,8 @@ setInterval(function() {
     });
     $('#apply').click(function() {
         updateHoldType();
-        AC.passiveHysteresis = parseInt($('#passive_hysteresis').val(), 10);
-        AC.activeHysteresis = parseInt($('#active_hysteresis').val(), 10);
+        AC.passiveHysteresis = parseInt($('#passive-hysteresis').val(), 10);
+        AC.activeHysteresis = parseInt($('#active-hysteresis').val(), 10);
         AC.mode = $('input[name="mode"]:checked').val();
         AC.setpoint = parseInt($('#setpoint').val(), 10);
         saveAppData();
@@ -150,8 +150,8 @@ function getScheduleInfo() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
         const time = $(this).find('input[type="time"]').val();
-        const heatTemp = $(this).find('input.heat_input').val();
-        const coolTemp = $(this).find('input.cool_input').val();
+        const heatTemp = $(this).find('input.heat-input').val();
+        const coolTemp = $(this).find('input.cool-input').val();
         if (time && (heatTemp || coolTemp)) {
             timeslots.push({ time, heatTemp, coolTemp });
         }
@@ -193,9 +193,9 @@ function getScheduleInfo() {
     };
 }
 function populateTimeslotNavigation(timeslot) {
-    $('#next_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
-    $('#next_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
-    $('#hold_until').val(timeslot.time);
+    $('#next-heat-temp').val(timeslot.heatTemp || $('#setpoint').val());
+    $('#next-cool-temp').val(timeslot.coolTemp || $('#setpoint').val());
+    $('#hold-until').val(timeslot.time);
     AC.holdUntil = timeslot.time;
 }
 let currentTimeslotIndex = -1;
@@ -227,22 +227,14 @@ function timeslotNavigation(direction) {
     }
     AC.holdUntil = newTimeslot ? newTimeslot.time : getOneHourLaterTime();
 }
-function findTimeslot(currentTime, timeslots, direction) {
-    if (direction === 'prev') {
-        timeslots = timeslots.slice().reverse();
-    }
-    return timeslots.find(timeslot => 
-        direction === 'next' ? timeslot.time > currentTime : timeslot.time < currentTime
-    ) || timeslots[0];
-}
-$('#next_timeslot, #prev_timeslot').click(function() {
-    const direction = $(this).attr('id') === 'next_timeslot' ? 'next' : 'prev';
+$('#next-timeslot, #prev-timeslot').click(function() {
+    const direction = $(this).attr('id') === 'next-timeslot' ? 'next' : 'prev';
     timeslotNavigation(direction);
 });
 function updateHoldType() {
     AC.holdType = $('input[name="hold"]:checked').val();
     const hasSchedule = $('.schedule-timeslot').length > 0;
-    $('#follow_schedule').prop('disabled', !hasSchedule);
+    $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
         if (AC.holdType === 'schedule') {
             $('input[name="hold"][value="permanent"]').prop('checked', true);
@@ -251,7 +243,7 @@ function updateHoldType() {
     }
         if (AC.holdType === 'schedule') {
             $('#setpoint').prop('readonly', true);
-            $('#temp_hold_options').hide();
+            $('#temp-hold-options').hide();
             const sched = getScheduleInfo();
             AC.setpoint = sched.scheduledTemp;
             $('#setpoint').val(AC.setpoint);
@@ -259,11 +251,11 @@ function updateHoldType() {
             const sched = getScheduleInfo();
             populateTimeslotNavigation(sched.nextTimeslot);
             $('#setpoint').prop('readonly', false);
-            $('#temp_hold_options').show();
-            AC.holdUntil = $('#hold_until').val();
+            $('#temp-hold-options').show();
+            AC.holdUntil = $('#hold-until').val();
         } else { 
             $('#setpoint').prop('readonly', false);
-            $('#temp_hold_options').hide();
+            $('#temp-hold-options').hide();
         }
     }
 $('input[name="hold"]').change(function() {

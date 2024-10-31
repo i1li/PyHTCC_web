@@ -48,14 +48,14 @@
     <button id="exportSchedules">Export Schedules</button>
     </div>
 <div id="temp_hold_options">
-    <label for="hold_until_time">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
+    <label for="hold_until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
 <a id="prev_timeslot">⏮Previous Schedule Timeslot</a>  |  <a id="next_timeslot">Next Schedule Timeslot⏭</a><br>
-<input type="time" id="hold_until_time" readonly />
+<input type="time" id="hold_until" readonly />
     <div class="temp-inputs">
-        <label for="hold_until_heat_temp">Heat Temp:</label>
-        <input type="number" id="hold_until_heat_temp" placeholder="Heat Temp" readonly />
-        <label for="hold_until_cool_temp">Cool Temp:</label>
-        <input type="number" id="hold_until_cool_temp" placeholder="Cool Temp" readonly />
+        <label for="next_heat_temp">Heat Temp:</label>
+        <input type="number" id="next_heat_temp" placeholder="Heat Temp" readonly />
+        <label for="next_cool_temp">Cool Temp:</label>
+        <input type="number" id="next_cool_temp" placeholder="Cool Temp" readonly />
     </div>
 </div>
 <button id="apply">Apply Changes</button>

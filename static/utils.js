@@ -3,7 +3,7 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     currentScheduleName: '',
     currentSchedule: {},
     holdType: 'permanent',
-    holdUntilTime: null,
+    holdUntil: null,
     mode: 'cool',
     currentTemp: 0,
     currentMode: null,

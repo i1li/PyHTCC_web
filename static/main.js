@@ -188,6 +188,7 @@ function getScheduleInfo() {
                 break;
             }
         }
+        AC.holdUntil = nextTimeslot.time;
         if (currentTimeslot) {
             if (AC.mode === 'cool' && currentTimeslot.coolTemp) {
                 scheduledTemp = Number(currentTimeslot.coolTemp);
@@ -206,16 +207,16 @@ function getScheduleInfo() {
     };
 }
 function populateTimeslotNavigation(timeslot) {
-    $('#hold_until_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
-    $('#hold_until_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
-    $('#hold_until_time').val(timeslot.time);
-    AC.holdUntilTime = timeslot.time;
+    $('#next_heat_temp').val(timeslot.heatTemp || $('#setpoint').val());
+    $('#next_cool_temp').val(timeslot.coolTemp || $('#setpoint').val());
+    $('#hold_until').val(timeslot.time);
+    AC.holdUntil = timeslot.time;
 }
 function timeslotNavigation(direction) {
     const sched = getScheduleInfo();
     const timeslots = sched.timeslots;
     const currentTime = getCurrentTime();
-    const newTimeslot = findTimeslot(AC.holdUntilTime, timeslots, direction);
+    const newTimeslot = findTimeslot(AC.holdUntil, timeslots, direction);
     if (newTimeslot) {
         populateTimeslotNavigation(newTimeslot);
     } else {
@@ -255,7 +256,7 @@ function updateHoldType() {
             populateTimeslotNavigation(sched.nextTimeslot);
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').show();
-            AC.holdUntilTime = $('#hold_until_time').val();
+            AC.holdUntil = $('#hold_until').val();
         } else { 
             $('#setpoint').prop('readonly', false);
             $('#temp_hold_options').hide();
@@ -286,7 +287,7 @@ function updateStatus() {
                 $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                 $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
                 const currentTime = getCurrentTime();
-                if (AC.holdType === 'temporary' && AC.holdUntilTime && currentTime >= AC.holdUntilTime) {
+                if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
                     $('input[name="hold"][value="schedule"]').prop('checked', true);
                     updateHoldType();
                 } else if (AC.holdType === 'schedule') {

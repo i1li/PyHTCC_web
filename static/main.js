@@ -33,37 +33,20 @@ setInterval(function() {
             loadSchedule(AC.currentScheduleName);
         }
     }
-    $('#importSchedules').click(function() {
-        $('#importFile').click();
-    });
-    $('#importFile').change(function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedSchedules = JSON.parse(e.target.result);
-                    AC.schedules = importedSchedules;
-                    alert('Schedules have been imported successfully.');
-                    loadScheduleList();
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                    alert('Failed to import schedules. Please ensure the file is a valid JSON.');
-                }
-            };
-            reader.readAsText(file);
+    function saveSchedule() {
+        const scheduleInfo = getScheduleInfo();
+        if (AC.currentScheduleName) {
+            AC.schedules[AC.currentScheduleName] = { timeslots: scheduleInfo.timeslots };
         }
-    });
-    $('#exportSchedules').click(function() {
-        const blob = new Blob([JSON.stringify(AC.schedules)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'thermostat-schedules.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        AC.currentSchedule = { timeslots: scheduleInfo.timeslots };
+    }
+    $('#save_schedule').click(function() {
+        const name = prompt("Enter a name for this schedule:", AC.currentScheduleName);
+        if (name) {
+            AC.currentScheduleName = name;
+            saveSchedule();
+            loadScheduleList();
+        }
     });
     function loadScheduleList() {
         const $loadSelect = $('#load_schedule');
@@ -96,49 +79,20 @@ setInterval(function() {
             loadSchedule(selectedSchedule);
         }
     });
-    function saveSchedule() {
-        const schedule = [];
-        $('.schedule-timeslot').each(function() {
-            const time = $(this).find('input[type="time"]').val();
-            const heatTemp = $(this).find('input[placeholder="Heat Temp"]').val();
-            const coolTemp = $(this).find('input[placeholder="Cool Temp"]').val();
-            if (time && (heatTemp || coolTemp)) {
-                schedule.push({ time, heatTemp, coolTemp });
-            }
-        });
-        if (AC.currentScheduleName) {
-            AC.schedules[AC.currentScheduleName] = { timeslots: schedule };
-        }
-        AC.currentSchedule = { timeslots: schedule };
-    }
-    $('#save_schedule').click(function() {
-        const name = prompt("Enter a name for this schedule:", AC.currentScheduleName);
-        if (name) {
-            const schedule = [];
-            $('.schedule-timeslot').each(function() {
-                const time = $(this).find('input[type="time"]').val();
-                const heatTemp = $(this).find('input[placeholder="Heat Temp"]').val();
-                const coolTemp = $(this).find('input[placeholder="Cool Temp"]').val();
-                if (time && (heatTemp || coolTemp)) {
-                    schedule.push({ time, heatTemp, coolTemp });
-                }
-            });
-            AC.schedules[name] = { timeslots: schedule };
-            AC.currentScheduleName = name;
-            loadScheduleList();
-            saveSchedule();
-        }
-    });
     function addTimeslot(timeslot = {}) {
         const newTimeslot = `
         <div class="schedule-timeslot">
-            <input type="time" value="${timeslot.time || ''}">
-            <button class="remove-timeslot">Remove Timeslot</button><br>
-            <label for="heat_temp">Heat Temp:</label>
-            <input type="number" placeholder="Heat Temp" value="${timeslot.heatTemp || ''}">
-            <label for="cool_temp">Cool Temp:</label>
-            <input type="number" placeholder="Cool Temp" value="${timeslot.coolTemp || ''}">
-        </div>`;
+        <div class="row"><div class="column">
+        <input type="time" value="${timeslot.time || ''}">
+        </div><div class="column">
+        <button class="remove-timeslot">Remove Timeslot</button>
+        </div></div><div class="row"><div class="column">
+        <label for="heat_temp">Heat Temp:</label>
+        <input type="number" class="heat_input" value="${timeslot.heatTemp || ''}">
+        </div><div class="column">
+        <label for="cool_temp">Cool Temp:</label>
+        <input type="number" class="cool_input" value="${timeslot.coolTemp || ''}">
+        </div></div></div>`;
         $('#schedule').append(newTimeslot);
     }
     $('#add_timeslot').click(function() {
@@ -150,22 +104,54 @@ setInterval(function() {
     $('#clear_schedule').click(function() {
         $('#schedule').empty();
     });
-$('#apply').click(function() {
-    updateHoldType();
-    AC.passiveHysteresis = parseInt($('#passive_hysteresis').val(), 10);
-    AC.activeHysteresis = parseInt($('#active_hysteresis').val(), 10);
-    AC.mode = $('input[name="mode"]:checked').val();
-    AC.setpoint = parseInt($('#setpoint').val(), 10);
-    saveAppData();
-    hysteresis(AC.setpoint, AC.mode);
-});
+    $('#importSchedules').click(function() {
+        $('#importFile').click();
+    });
+    $('#importFile').change(function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedSchedules = JSON.parse(e.target.result);
+                    AC.schedules = importedSchedules;
+                    alert('Schedules have been imported successfully.');
+                    loadScheduleList();
+                } catch (error) {
+                    console.error('Error parsing JSON:', error);
+                    alert('Failed to import schedules. Please ensure the file is a valid JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
+    });
+    $('#exportSchedules').click(function() {
+        const blob = new Blob([JSON.stringify(AC.schedules)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'thermostat-schedules.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+    $('#apply').click(function() {
+        updateHoldType();
+        AC.passiveHysteresis = parseInt($('#passive_hysteresis').val(), 10);
+        AC.activeHysteresis = parseInt($('#active_hysteresis').val(), 10);
+        AC.mode = $('input[name="mode"]:checked').val();
+        AC.setpoint = parseInt($('#setpoint').val(), 10);
+        saveAppData();
+        hysteresis(AC.setpoint, AC.mode);
+    });
 });
 function getScheduleInfo() {
     const timeslots = [];
     $('.schedule-timeslot').each(function() {
         const time = $(this).find('input[type="time"]').val();
-        const heatTemp = $(this).find('input[placeholder="Heat Temp"]').val();
-        const coolTemp = $(this).find('input[placeholder="Cool Temp"]').val();
+        const heatTemp = $(this).find('input.heat_input').val();
+        const coolTemp = $(this).find('input.cool_input').val();
         if (time && (heatTemp || coolTemp)) {
             timeslots.push({ time, heatTemp, coolTemp });
         }

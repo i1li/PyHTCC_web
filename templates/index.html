@@ -8,56 +8,49 @@
 <body>
 <h3>Thermostat Control</h3>
 <div class="mode-container">
-    <div class="mode-option">
-        <input type="radio" id="cool" name="mode" value="cool" checked>
-        <label for="cool">Cooling</label>
-    </div>
-    <div class="mode-option">
-        <input type="radio" id="heat" name="mode" value="heat">
-        <label for="heat">Heating</label>
-    </div>
-</div>
+<div class="mode-option">
+<input type="radio" id="cool" name="mode" value="cool" checked>
+<label for="cool">Cooling</label>
+</div><div class="mode-option">
+<input type="radio" id="heat" name="mode" value="heat">
+<label for="heat">Heating</label>
+</div></div>
 <center><div id="latest-reading"></div>
+<div class="row"><div class="column">
 <label for="setpoint">Set Temperature:</label>
-<input type="number" id="setpoint" placeholder="Set Temperature" />
-<br>
-<label for="passive_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
+<input type="number" id="setpoint" />
+</div><div class="column"><label for="passive_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
 <input type="number" id="passive_hysteresis" placeholder="(optional)" />
-<label for="active_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
+</div><div class="column"><label for="active_hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
 <input type="number" id="active_hysteresis" placeholder="(optional)" />
+</div></div>
 <div class="hold-container">
-    <div class="hold-option">
-        <input type="radio" id="follow_schedule" name="hold" value="schedule">
-        <label for="follow_schedule">Follow Schedule</label>
-    </div>
-    <div class="hold-option">
-        <input type="radio" id="temp_hold" name="hold" value="temporary">
-        <label for="temp_hold">Temporary Hold</label>
-    </div>
-    <div class="hold-option">
-        <input type="radio" id="perm_hold" name="hold" value="permanent" checked>
-        <label for="perm_hold">Permanent Hold</label>
-    </div>
-</div>
-<div class="schedule-controls">
-    <select id="load_schedule">
-        <option value="">Load Saved Schedule</option>
-    </select>
-    <button id="importSchedules">Import Schedules</button>
-    <input type="file" id="importFile" style="display:none;" accept=".json">
-    <button id="exportSchedules">Export Schedules</button>
-    </div>
-<div id="temp_hold_options">
-    <label for="hold_until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
-<a id="prev_timeslot">⏮Previous Schedule Timeslot</a>  |  <a id="next_timeslot">Next Schedule Timeslot⏭</a><br>
+<div class="hold-option">
+<input type="radio" id="follow_schedule" name="hold" value="schedule">
+<label for="follow_schedule">Follow Schedule</label>
+</div><div class="hold-option">
+<input type="radio" id="temp_hold" name="hold" value="temporary">
+<label for="temp_hold">Temporary Hold</label>
+</div><div class="hold-option">
+<input type="radio" id="perm_hold" name="hold" value="permanent" checked>
+<label for="perm_hold">Permanent Hold</label>
+</div></div><div class="schedule-controls">
+<select id="load_schedule">
+<option value="">Load Saved Schedule</option></select>
+<button id="importSchedules">Import Schedules</button>
+<input type="file" id="importFile" style="display:none;" accept=".json">
+<button id="exportSchedules">Export Schedules</button>
+</div><div id="temp_hold_options">
+<label for="hold_until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
+<a id="prev_timeslot">⏮Previous Schedule Timeslot</a> | <a id="next_timeslot">Next Schedule Timeslot⏭</a><br>
 <input type="time" id="hold_until" readonly />
-    <div class="temp-inputs">
-        <label for="next_heat_temp">Heat Temp:</label>
-        <input type="number" id="next_heat_temp" placeholder="Heat Temp" readonly />
-        <label for="next_cool_temp">Cool Temp:</label>
-        <input type="number" id="next_cool_temp" placeholder="Cool Temp" readonly />
-    </div>
-</div>
+<div class="row"><div class="column">
+<label for="next_heat_temp">Heat Temp:</label>
+<input type="number" id="next_heat_temp" readonly />
+</div><div class="column">
+<label for="next_cool_temp">Cool Temp:</label>
+<input type="number" id="next_cool_temp" readonly />
+</div></div></div>
 <button id="apply">Apply Changes</button>
 <h4>Schedule</h4></center>
 <div id="schedule"></div>

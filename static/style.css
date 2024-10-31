@@ -2,10 +2,12 @@ body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding
 label, input, select { display: inline-block; margin: 5px 0; }
 button { margin: 10px 0; padding: 10px; width: 100%; }
 button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
-#status { display: none; margin-top: 20px; padding: 10px; }
+#status, #latest-reading { display: none; margin-top: 20px; padding: 10px; }
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }
+input[type="number"] { width: 5rem; }
+
 .mode-option label, .hold-option label {
     display: block;
     text-align: center;
@@ -24,8 +26,18 @@ button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; 
 .schedule-timeslot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
 .remove-timeslot { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
 #temp_hold_options { display: none; margin-top: 10px; }
-.temp-inputs { display: flex; justify-content: space-between; }
-.temp-inputs input { width: 45%; }
+.row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+}
+.column {
+    flex: 1;
+    min-width: 0;
+}
 .schedule-controls { display: flex; align-items: center; margin-bottom: 10px; }
 .schedule-controls select, .schedule-controls label { margin-right: 10px; }
 #add_timeslot,#clear_schedule,#save_schedule{width:32%;}
@@ -39,8 +51,5 @@ button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; 
     font-size: 16px;
     transition: all 0.7s ease-in-out;
 }
-#apply:hover {
-    background-image: linear-gradient(to left, #007bff, #dc3545);
-}
-#apply:active {
-    background-image: linear-gradient(to top, #007bff91, #dc35468e);}
+#apply:hover {background-image: linear-gradient(to left, #007bff, #dc3545);}
+#apply:active {background-image: linear-gradient(to top, #007bff91, #dc35468e);}

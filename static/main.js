@@ -1,38 +1,63 @@
+let lastUpdateTime = 0;
+function updateStatus() {
+    return new Promise((resolve, reject) => {
+        const now = Date.now();
+        const timeToWait = Math.max(0, 30000 - (now - lastUpdateTime));
+        setTimeout(() => {
+            lastUpdateTime = Date.now();
+            let timeoutId;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
+            });
+            const updatePromise = new Promise((resolve) => {
+                $.get('/get_status', function(data) {
+                    AC.latestReading = data;
+                    AC.running = data.running;
+                    AC.currentTemp = data.current_temp;
+                    AC.currentSetpoint = data.setpoint;
+                    AC.currentMode = data.mode;
+                    resolve();
+                });
+            });
+            Promise.race([updatePromise, timeoutPromise])
+                .then(() => {
+                    clearTimeout(timeoutId);
+                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+                    $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
+                    const currentTime = getCurrentTime();
+                    if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
+                        $('input[name="hold"][value="schedule"]').prop('checked', true);
+                        updateHoldType();
+                    } else if (AC.holdType === 'schedule') {
+                        updateHoldType();
+                    }
+                    resolve();
+                })
+                .catch((error) => {
+                    clearTimeout(timeoutId);
+                    reject(error);
+                });
+        }, timeToWait);
+    });
+}
 $(document).ready(function() {
-    initializeUI();
-    updateHoldType();
-    updateStatus();
-    setInterval(function() {
-        updateStatus()
-        .then(() => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    saveAppData();
-                    resolve();
-                }, 1000);
-            });
-        })
-        .then(() => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    hysteresis(AC.setpoint, AC.mode);
-                    resolve();
-                }, 1000);
-            });
-        })
-    }, 60000);
     function initializeUI() {
+        scheduleNextMinute();
+        loadScheduleList();
         $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
         $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
         $('#setpoint').val(AC.setpoint);
         $('#passive-hysteresis').val(AC.passiveHysteresis);
         $('#active-hysteresis').val(AC.activeHysteresis);
-        loadScheduleList();
         if (AC.currentScheduleName) {
             $('#load-schedule').val(AC.currentScheduleName);
             loadSchedule(AC.currentScheduleName);
         }
     }
+    updateStatus()
+    .then(() => {
+        initializeUI();
+    });
     function saveSchedule() {
         const sched = getScheduleInfo();
         if (AC.currentScheduleName) {
@@ -145,6 +170,63 @@ $(document).ready(function() {
         saveAppData();
         hysteresis(AC.setpoint, AC.mode);
     });
+    function runTasksOnMinute() {
+        updateStatus()
+            .then(() => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        saveAppData();
+                        resolve();
+                    }, 1000);
+                });
+            })
+            .then(() => {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        hysteresis(AC.setpoint, AC.mode);
+                        resolve();
+                    }, 1000);
+                });
+            });
+    }
+    function scheduleNextMinute() {
+        const now = new Date();
+        const delay = 60000 - (now.getSeconds() * 1000);
+        setTimeout(() => {
+            runTasksOnMinute();
+            setInterval(runTasksOnMinute, 60000);
+        }, delay);
+    }
+});
+function updateHoldType() {
+    AC.holdType = $('input[name="hold"]:checked').val();
+    const hasSchedule = $('.schedule-timeslot').length > 0;
+    $('#follow-schedule').prop('disabled', !hasSchedule);
+    if (!hasSchedule) {
+        if (AC.holdType === 'schedule') {
+            $('input[name="hold"][value="permanent"]').prop('checked', true);
+            AC.holdType = 'permanent';
+        }
+    }
+        if (AC.holdType === 'schedule') {
+            $('#setpoint').prop('readonly', true);
+            $('#temp-hold-options').hide();
+            const sched = getScheduleInfo();
+            AC.setpoint = sched.scheduledTemp;
+            $('#setpoint').val(AC.setpoint);
+        } else if (AC.holdType === 'temporary') {
+            const sched = getScheduleInfo();
+            populateTimeslotNavigation(sched.nextTimeslot);
+            $('#setpoint').prop('readonly', false);
+            $('#temp-hold-options').show();
+            AC.holdUntil = $('#hold-until').val();
+        } else { 
+            $('#setpoint').prop('readonly', false);
+            $('#temp-hold-options').hide();
+        }
+    }
+$('input[name="hold"]').change(function() {
+    updateHoldType();
 });
 function getScheduleInfo() {
     const timeslots = [];
@@ -231,69 +313,3 @@ $('#next-timeslot, #prev-timeslot').click(function() {
     const direction = $(this).attr('id') === 'next-timeslot' ? 'next' : 'prev';
     timeslotNavigation(direction);
 });
-function updateHoldType() {
-    AC.holdType = $('input[name="hold"]:checked').val();
-    const hasSchedule = $('.schedule-timeslot').length > 0;
-    $('#follow-schedule').prop('disabled', !hasSchedule);
-    if (!hasSchedule) {
-        if (AC.holdType === 'schedule') {
-            $('input[name="hold"][value="permanent"]').prop('checked', true);
-            AC.holdType = 'permanent';
-        }
-    }
-        if (AC.holdType === 'schedule') {
-            $('#setpoint').prop('readonly', true);
-            $('#temp-hold-options').hide();
-            const sched = getScheduleInfo();
-            AC.setpoint = sched.scheduledTemp;
-            $('#setpoint').val(AC.setpoint);
-        } else if (AC.holdType === 'temporary') {
-            const sched = getScheduleInfo();
-            populateTimeslotNavigation(sched.nextTimeslot);
-            $('#setpoint').prop('readonly', false);
-            $('#temp-hold-options').show();
-            AC.holdUntil = $('#hold-until').val();
-        } else { 
-            $('#setpoint').prop('readonly', false);
-            $('#temp-hold-options').hide();
-        }
-    }
-$('input[name="hold"]').change(function() {
-    updateHoldType();
-});
-function updateStatus() {
-    return new Promise((resolve, reject) => {
-        let timeoutId;
-        const timeoutPromise = new Promise((resolve, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
-        });
-        const updatePromise = new Promise((resolve) => {
-            $.get('/get_status', function(data) {
-                AC.latestReading = data;
-                AC.running = data.running;
-                AC.currentTemp = data.current_temp;
-                AC.currentSetpoint = data.setpoint;
-                AC.currentMode = data.mode;
-                resolve();
-            });
-        });
-        Promise.race([updatePromise, timeoutPromise])
-            .then(() => {
-                clearTimeout(timeoutId);
-                $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
-                $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
-                const currentTime = getCurrentTime();
-                if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
-                    $('input[name="hold"][value="schedule"]').prop('checked', true);
-                    updateHoldType();
-                } else if (AC.holdType === 'schedule') {
-                    updateHoldType();
-                }
-                resolve();
-            })
-            .catch((error) => {
-                clearTimeout(timeoutId);
-                reject(error);
-            });
-    });
-}

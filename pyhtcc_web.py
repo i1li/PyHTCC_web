@@ -30,15 +30,6 @@ def read_thermostat(zone_name):
         setpoint = heat_setpoint if system_mode == 1 else cool_setpoint if system_mode == 3 else 'off'
         return current_temp, setpoint, mode, running
     return None, None, None, None
-def set_thermostat(zone_name, setpoint, mode):
-    try:
-        zone = p.get_zone_by_name(zone_name)
-        if mode == 'cool':
-            zone.set_permanent_cool_setpoint(setpoint)
-        elif mode == 'heat':
-            zone.set_permanent_heat_setpoint(setpoint)
-    except Exception as e:
-        print(f"Error: {e}")
 thermostat_status = {
     'current_temp': None,
     'setpoint': None,
@@ -72,6 +63,15 @@ def get_status():
             thermostat_status['last_update'] = None
             thermostat_status['update_status'] = None
     return jsonify(thermostat_status)
+def set_thermostat(zone_name, setpoint, mode):
+    try:
+        zone = p.get_zone_by_name(zone_name)
+        if mode == 'cool':
+            zone.set_permanent_cool_setpoint(setpoint)
+        elif mode == 'heat':
+            zone.set_permanent_heat_setpoint(setpoint)
+    except Exception as e:
+        print(f"Error: {e}")
 @app.route('/set_update', methods=['POST'])
 def set_update():
     global thermostat_status

@@ -4,6 +4,7 @@ button { margin: 10px 0; padding: 10px; width: 100%; }
 button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
 #status, #latest-reading { display: none; margin-top: 20px; padding: 10px; }
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
+#hold-until {margin-right: 7%;}
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }
 input[type="number"] { width: 5rem; }
@@ -23,7 +24,8 @@ input[type="number"] { width: 5rem; }
     color: white;
 }
 .schedule-timeslot { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
-.remove-timeslot { background-color: #dc3545; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 33%; }
+.remove-timeslot { background-color: #dc3546ba; color: white; border: none; padding: 5px 10px; margin-left: 10%; width: 5rem; border-radius: 1rem; transition: all 1s ease; }
+.remove-timeslot:hover { background-color: #dc3546; border-radius: 2rem; }
 #temp-hold-options { display: none; margin-top: 10px; }
 .schedule-controls { display: flex; align-items: center; margin-bottom: 10px; }
 .schedule-controls select, .schedule-controls label { margin-right: 10px; }
@@ -38,8 +40,8 @@ input[type="number"] { width: 5rem; }
     font-size: 16px;
     transition: all 0.7s ease-in-out;
 }
-#apply:hover {background-image: linear-gradient(to left, #007bff, #dc3545);}
-#apply:active {background-image: linear-gradient(to top, #007bff91, #dc35468e);}
+#apply:active {background-image: linear-gradient(to left, #007bff9a, #dc35469d);}
+#apply:hover {background-image: linear-gradient(to top, #007bffb8, #dc3546b9);}
 .row {
     display: flex;
     flex-direction: row;

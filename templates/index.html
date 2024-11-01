@@ -6,26 +6,22 @@
 <script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
 </head>
 <body>
-<h3>Thermostat Control</h3>
-<div class="mode-container">
-<div class="mode-option">
+<div class="mode-container"><div class="mode-option">
 <input type="radio" id="cool" name="mode" value="cool" checked>
-<label for="cool">Cooling</label>
+<label for="cool">Cool</label>
 </div><div class="mode-option">
 <input type="radio" id="heat" name="mode" value="heat">
-<label for="heat">Heating</label>
+<label for="heat">Heat</label>
 </div></div>
 <center><div id="latest-reading"></div>
 <div class="row"><div class="column">
-<label for="setpoint">Set Temperature:</label>
+<label for="setpoint">Temperature:</label><br>
 <input type="number" id="setpoint" />
-</div><div class="column"><label for="passive-hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label>
+</div><div class="column"><label for="passive-hysteresis"><a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Passive Hysteresis</a>:</label><br>
 <input type="number" id="passive-hysteresis" placeholder="(optional)" />
-</div><div class="column"><label for="active-hysteresis">Set <a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label>
+</div><div class="column"><label for="active-hysteresis"><a href="https://github.com/i1li/PyHTCC_web#what-is-hysteresis" title="What is Hysteresis?">Active Hysteresis</a>:</label><br>
 <input type="number" id="active-hysteresis" placeholder="(optional)" />
-</div></div>
-<div class="hold-container">
-<div class="hold-option">
+</div></div><div class="hold-container"><div class="hold-option">
 <input type="radio" id="follow-schedule" name="hold" value="schedule">
 <label for="follow-schedule">Follow Schedule</label>
 </div><div class="hold-option">
@@ -42,15 +38,15 @@
 <button id="exportSchedules">Export Schedules</button>
 </div><div id="temp-hold-options">
 <label for="hold-until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
-<a id="prev-timeslot">⏮Previous Schedule Timeslot</a> | <a id="next-timeslot">Next Schedule Timeslot⏭</a><br>
 <input type="time" id="hold-until" readonly />
+<a id="prev-timeslot" title="Previous Timeslot">⏮ Previous</a> | <a id="next-timeslot" title="Next Timeslot">Next ⏭</a><br>
 <div class="row"><div class="column">
-<label for="next-heat-temp">Heat Temp:</label>
-<input type="number" id="next-heat-temp" readonly />
-</div><div class="column">
 <label for="next-cool-temp">Cool Temp:</label>
 <input type="number" id="next-cool-temp" readonly />
-</div></div></div>
+</div><div class="column">
+<label for="next-heat-temp">Heat Temp:</label>
+<input type="number" id="next-heat-temp" readonly />
+</div></div></div><div id="warning"></div>
 <button id="apply">Apply Changes</button>
 <h4>Schedule</h4></center>
 <div id="schedule"></div>
@@ -58,8 +54,11 @@
 <button id="clear-schedule">Clear Schedule</button>
 <button id="save-schedule">Save Schedule</button>
 <center><div id="status">Status: Loading...</div></center>
+<script src="{{ url_for('static', filename='init.js') }}"></script>
+<script src="{{ url_for('static', filename='schedule.js') }}"></script>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>
-<script src="{{ url_for('static', filename='main.js') }}"></script>
 <script src="{{ url_for('static', filename='hysteresis.js') }}"></script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
+<script src="{{ url_for('static', filename='timeslot-navigation.js') }}"></script>
 </body>
 </html>

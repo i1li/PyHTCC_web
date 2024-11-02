@@ -1,5 +1,6 @@
 let lastUpdateTime = 0;
 let hasUnsavedChanges = false;
+let hasUnsavedSchedule = false;
 let currentTimeslotIndex = -1;
 let UI = {};
 let appData = AC = JSON.parse(localStorage.getItem('appData')) || {

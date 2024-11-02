@@ -122,12 +122,14 @@ $('#active-hys').on('change', function() {
     checkForChanges();
 });
 $('#apply').click(function() {
-    AC.holdType = UI.holdType;
-    AC.holdUntil = UI.holdUntil;
-    AC.passiveHys = UI.passiveHys;
-    AC.activeHys = UI.activeHys;
     AC.mode = UI.mode;
     AC.setpoint = UI.setpoint;
+    AC.passiveHys = UI.passiveHys;
+    AC.activeHys = UI.activeHys;
+    AC.holdType = UI.holdType;
+    AC.holdUntil = UI.holdUntil;
+    AC.currentSchedule = UI.currentSchedule; 
+    AC.currentScheduleName = UI.currentScheduleName;
     if (UI.holdType === 'permanent' || UI.holdType === 'temporary') {
         AC.holdTemp = UI.setpoint;
     }

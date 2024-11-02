@@ -13,7 +13,7 @@
 <input type="radio" id="heat" name="mode" value="heat">
 <label for="heat">Heat</label>
 </div></div>
-<center><div id="current-temp"></div><div id="latest-reading"></div>
+<center><div id="current-temp">...loading</div><div id="latest-reading"></div>
 <div class="row"><div class="column">
 <label for="setpoint">Temperature:</label><br>
 <input type="number" id="setpoint" />
@@ -30,18 +30,12 @@
 </div><div class="hold-option">
 <input type="radio" id="perm-hold" name="hold" value="permanent" checked>
 <label for="perm-hold">Permanent Hold</label>
-</div></div><div class="schedule-controls">
-<select id="load-schedule">
-<option value="">Load Saved Schedule</option></select>
-<button id="importSchedules">Import Schedules</button>
-<input type="file" id="importFile" style="display:none;" accept=".json">
-<button id="exportSchedules">Export Schedules</button>
-</div>
+</div></div>
 <div id="warning">* * * You have unsaved changes * * *</div>
 <div id="temp-hold-options">
-<label for="hold-until">Temporarily holds temperature entered above until schedule resumes at the following time & temp:</label>
+<label for="hold-until">Holds the temperature setting above, until schedule resumes at the following time & temp:</label>
 <input type="time" id="hold-until" readonly />
-<a id="prev-timeslot" title="Previous Timeslot">⏮ Previous</a> | <a id="next-timeslot" title="Next Timeslot">Next ⏭</a><br>
+<a id="prev-timeslot" title="Previous Timeslot">⏮ Previous</a>&nbsp; | &nbsp;<a id="next-timeslot" title="Next Timeslot">Next ⏭</a><br>
 <div class="row"><div class="column">
 <label for="next-cool-temp">Cool Temp:</label>
 <input type="number" id="next-cool-temp" readonly />
@@ -49,9 +43,15 @@
 <label for="next-heat-temp">Heat Temp:</label>
 <input type="number" id="next-heat-temp" readonly />
 </div></div></div>
-<button id="apply">Apply Changes</button>
-<h4>Schedule</h4></center>
-<div id="schedule"></div>
+<button id="apply">Apply Changes</button></center>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Schedule:</b>
+<div class="schedule-controls">
+<select id="load-schedule">
+<option value="">Saved Schedules:</option></select>
+<button id="importSchedules">Import Schedules</button>
+<input type="file" id="importFile" style="display:none;" accept=".json">
+<button id="exportSchedules">Export Schedules</button>
+</div><div id="schedule"></div>
 <button id="add-timeslot">Add Timeslot</button>
 <button id="clear-schedule">Clear Schedule</button>
 <button id="save-schedule">Save Schedule</button>

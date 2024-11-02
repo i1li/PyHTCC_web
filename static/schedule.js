@@ -106,8 +106,8 @@ function loadScheduleList() {
 function loadSchedule(scheduleName) {
     const schedule = AC.schedules[scheduleName];
     if (schedule) {
-        AC.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
-        AC.currentScheduleName = scheduleName;
+        UI.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
+        UI.currentScheduleName = scheduleName;
         $('#schedule').empty();
         if (Array.isArray(schedule.timeslots)) {
             schedule.timeslots.forEach(timeslot => addTimeslot(timeslot));

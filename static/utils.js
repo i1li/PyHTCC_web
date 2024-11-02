@@ -68,9 +68,29 @@ function checkForChanges() {
     updateWarning();
 }
 function updateWarning() {
+    const warningElement = document.getElementById('warning');
+    const applyElement = document.getElementById('apply');
     if (hasUnsavedChanges) {
-        $('#warning').text('You have unsaved changes.');
+        warningElement.style.display = 'block';
+        applyElement.style.border = 'red solid 3px';
+
     } else {
-        $('#warning').text('');
+        warningElement.style.display = 'none';
+        applyElement.style.border = 'none';
     }
 }
+document.getElementById('current-temp').textContent = `Current Temp: ` + AC.currentTemp;
+const scrollTransition = 160;
+const toTop = document.getElementById("toTop");
+function handleScroll() {
+  if (document.body.scrollTop > scrollTransition || document.documentElement.scrollTop > scrollTransition) {
+    toTop.style.display = "block";
+  } else {
+    toTop.style.display = "none";
+  }
+}
+window.addEventListener('scroll', handleScroll);
+function topFunction() {
+  window.scrollTo(0, 0);
+}
+

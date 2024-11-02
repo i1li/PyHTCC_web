@@ -8,7 +8,7 @@ Limitations Addressed: The Honeywell app only allows 1 saved schedule, 4 schedul
 - Save & choose from multiple schedules
 - Import & export saved schedules in JSON
 - Choose to follow the set schedule, temporarily hold a temperature, or hold permanently
-- [Hysteresis (AKA deadband)](#what-is-hysteresis) - Adds optional temerature tolerance to reduce frequent on/off cycles.
+- [Hysteresis (AKA deadband)](#what-is-hysteresis) - Adds optional temperature tolerance to reduce frequent on/off cycles.
 
 ### Getting Started
 
@@ -39,8 +39,8 @@ Passive Hysteresis is the amount of degrees beyond setpoint system rests before 
 
 Typical hysteresis doesn't differentiate between active & passive, splitting the hysteresis setting evenly in both directions of setpoint. (Setting the same value for active & passive will give this result.)
 
-**Example:**  Temp set at 72 degrees, Active Hysteresis at 1, and Passive Hysteresis at 2:
+**Example:**  With Temp set at 72 degrees, Active Hysteresis at 1, and Passive Hysteresis at 2:
 
-- In cool mode, will run until 71, then enter rest until 74.
+- In cool mode, runs until 71, then rests until 74.
 
-- In heat mode, will run until 73, then enter rest until 70.
+- In heat mode, runs until 73, then rests until 70.

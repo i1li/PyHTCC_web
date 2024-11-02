@@ -2,8 +2,9 @@ body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding
 label, input, select { display: inline-block; margin: 5px 0; }
 button { margin: 10px 0; padding: 10px; width: 100%; }
 button:hover, a:hover, .hold-option:hover, .mode-option:hover {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
+#current-temp {margin-top:0rem; margin-bottom:0rem; background-image: radial-gradient(circle, #007bff, #dc3545);}
 #status, #latest-reading { display: none; margin-top: 20px; padding: 10px; }
-.mode-container, .hold-container { display: flex; justify-content: space-evenly; margin: 20px 0; }
+.mode-container, .hold-container { display: flex; justify-content: space-evenly; }
 #hold-until {margin-right: 7%;}
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }
@@ -33,6 +34,7 @@ input[type="number"] { width: 5rem; }
 #apply {
     background-image: linear-gradient(to right, #007bff, #dc3545);
     color: white;
+    width: 90%;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
@@ -54,3 +56,13 @@ input[type="number"] { width: 5rem; }
     flex: 1;
     min-width: 0;
 }
+#toTop {display: none;
+    position: fixed;
+    bottom: 0;
+    right: 2.5%;
+    padding: 5px;
+}
+.toTop {width: 2.7em; background: rgba(128,128,128,.1); opacity: 0.4; filter: invert(100%) !important;}
+.toTop:hover {cursor: pointer; filter: none !important; transition: all .3s ease-in-out;background: rgba(128,128,128,.33);
+    opacity: 0.9;}
+#warning {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2rem; left: 0;}

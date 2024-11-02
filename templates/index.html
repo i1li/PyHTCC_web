@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
 </head>
-<body>
+<body><span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" id="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span>
 <div class="mode-container"><div class="mode-option">
 <input type="radio" id="cool" name="mode" value="cool" checked>
 <label for="cool">Cool</label>
@@ -13,7 +13,7 @@
 <input type="radio" id="heat" name="mode" value="heat">
 <label for="heat">Heat</label>
 </div></div>
-<center><div id="latest-reading"></div>
+<center><div id="current-temp"></div><div id="latest-reading"></div>
 <div class="row"><div class="column">
 <label for="setpoint">Temperature:</label><br>
 <input type="number" id="setpoint" />
@@ -46,14 +46,15 @@
 </div><div class="column">
 <label for="next-heat-temp">Heat Temp:</label>
 <input type="number" id="next-heat-temp" readonly />
-</div></div></div><div id="warning"></div>
+</div></div></div><div id="warning">* * * ! - You have unsaved changes - ! * * *</div>
 <button id="apply">Apply Changes</button>
 <h4>Schedule</h4></center>
 <div id="schedule"></div>
 <button id="add-timeslot">Add Timeslot</button>
 <button id="clear-schedule">Clear Schedule</button>
 <button id="save-schedule">Save Schedule</button>
-<center><div id="status">Status: Loading...</div></center>
+<center><div id="status">Status: Loading...</div>
+<span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span></center>
 <script src="{{ url_for('static', filename='init.js') }}"></script>
 <script src="{{ url_for('static', filename='schedule.js') }}"></script>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>

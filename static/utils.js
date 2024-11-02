@@ -13,10 +13,10 @@ function initializeUI() {
     $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
     UI.setpoint = AC.setpoint;
     $('#setpoint').val(AC.setpoint);
-    UI.passiveHysteresis = AC.passiveHysteresis;
-    $('#passive-hysteresis').val(AC.passiveHysteresis);
-    UI.activeHysteresis = AC.activeHysteresis;
-    $('#active-hysteresis').val(AC.activeHysteresis);
+    UI.passiveHys = AC.passiveHys;
+    $('#passive-hys').val(AC.passiveHys);
+    UI.activeHys = AC.activeHys;
+    $('#active-hys').val(AC.activeHys);
     if (AC.holdUntil !== undefined) {
         UI.holdUntil = AC.holdUntil;
         $('#hold-until').val(AC.holdUntil);
@@ -61,10 +61,10 @@ function checkForChanges() {
     const holdTypeChanged = UI.holdType !== AC.holdType;
     const holdUntilChanged = UI.holdUntil !== AC.holdUntil;
     const setpointChanged = UI.setpoint !== AC.setpoint;
-    const passiveHysteresisChanged = UI.passiveHysteresis !== AC.passiveHysteresis;
-    const activeHysteresisChanged = UI.activeHysteresis !== AC.activeHysteresis;
+    const passiveHysChanged = UI.passiveHys !== AC.passiveHys;
+    const activeHysChanged = UI.activeHys !== AC.activeHys;
     const currentScheduleChanged = !checkForScheduleChanges();
-    hasUnsavedChanges = modeChanged || holdTypeChanged || holdUntilChanged || setpointChanged || passiveHysteresisChanged || activeHysteresisChanged || currentScheduleChanged;
+    hasUnsavedChanges = modeChanged || holdTypeChanged || holdUntilChanged || setpointChanged || passiveHysChanged || activeHysChanged || currentScheduleChanged;
     updateWarning();
 }
 function updateWarning() {
@@ -79,11 +79,9 @@ function updateWarning() {
         applyElement.style.border = 'none';
     }
 }
-document.getElementById('current-temp').textContent = `Current Temp: ` + AC.currentTemp;
-const scrollTransition = 160;
 const toTop = document.getElementById("toTop");
 function handleScroll() {
-  if (document.body.scrollTop > scrollTransition || document.documentElement.scrollTop > scrollTransition) {
+  if (document.body.scrollTop > 160 || document.documentElement.scrollTop > 160) {
     toTop.style.display = "block";
   } else {
     toTop.style.display = "none";

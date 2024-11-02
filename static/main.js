@@ -27,8 +27,9 @@ function updateStatus() {
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
-                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
+                    document.getElementById('current-temp').textContent = `Current Temp: ` + AC.currentTemp;
                     $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
+                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     const currentTime = getCurrentTime();
                     if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
                         AC.holdType = 'schedule'
@@ -60,7 +61,7 @@ function runTasksOnMinute() {
     .then(() => {
         return new Promise((resolve) => {
             setTimeout(() => {
-                hysteresis(AC.setpoint, AC.mode);
+                hys(AC.setpoint, AC.mode);
                 resolve();
             }, 1000);
         });
@@ -95,8 +96,8 @@ function updateHoldType() {
         if (AC.holdType === 'schedule') {
             const sched = getACScheduleInfo();
             AC.setpoint = sched.scheduledTemp;        
-        } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && holdTemp !== 0) {        
-            AC.setpoint = holdTemp;
+        } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && AC.holdTemp !== 0) {        
+            AC.setpoint = AC.holdTemp;
         }
     }
 $('input[name="hold"]').change(function() {
@@ -112,28 +113,28 @@ $('#setpoint').on('change', function() {
     UI.setpoint = parseInt($(this).val(), 10);
     checkForChanges();
 });
-$('#passive-hysteresis').on('change', function() {
-    UI.passiveHysteresis = parseInt($(this).val(), 10);
+$('#passive-hys').on('change', function() {
+    UI.passiveHys = parseInt($(this).val(), 10);
     checkForChanges();
 });
-$('#active-hysteresis').on('change', function() {
-    UI.activeHysteresis = parseInt($(this).val(), 10);
+$('#active-hys').on('change', function() {
+    UI.activeHys = parseInt($(this).val(), 10);
     checkForChanges();
 });
 $('#apply').click(function() {
     AC.holdType = UI.holdType;
     AC.holdUntil = UI.holdUntil;
-    AC.passiveHysteresis = UI.passiveHysteresis;
-    AC.activeHysteresis = UI.activeHysteresis;
+    AC.passiveHys = UI.passiveHys;
+    AC.activeHys = UI.activeHys;
     AC.mode = UI.mode;
     AC.setpoint = UI.setpoint;
     if (UI.holdType === 'permanent' || UI.holdType === 'temporary') {
-        holdTemp = UI.setpoint;
+        AC.holdTemp = UI.setpoint;
     }
     saveAppData()
     .then(() => {
         updateHoldType();
-        hysteresis(UI.setpoint, UI.mode);
+        hys(AC.setpoint, AC.mode);
         hasUnsavedChanges = false;
         updateWarning();
     });

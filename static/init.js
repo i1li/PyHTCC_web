@@ -1,7 +1,6 @@
 let lastUpdateTime = 0;
 let hasUnsavedChanges = false;
 let currentTimeslotIndex = -1;
-let holdTemp = 0;
 let UI = {};
 let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     schedules: {},
@@ -9,6 +8,7 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     currentSchedule: {},
     holdType: 'permanent',
     holdUntil: null,
+    holdTemp: 0,
     mode: 'cool',
     currentTemp: 0,
     currentMode: null,
@@ -17,9 +17,9 @@ let appData = AC = JSON.parse(localStorage.getItem('appData')) || {
     rawSetpoint: 0,
     activeSetpoint: 0,
     restSetpoint: 0,
-    hysteresisSetpoint: 0,
-    passiveHysteresis: 0,
-    activeHysteresis: 0,
+    hysSetpoint: 0,
+    passiveHys: 0,
+    activeHys: 0,
     running: false,
     readyToRest: false,
     resting: false,

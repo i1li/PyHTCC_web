@@ -1,16 +1,16 @@
-function hysteresis(rawSetpoint, mode) {
+function hys(rawSetpoint, mode) {
     AC.rawSetpoint = rawSetpoint;
     const now = Date.now();
     const isCooling = mode === 'cool';
-    AC.activeSetpoint = isCooling ? AC.rawSetpoint - AC.activeHysteresis : AC.rawSetpoint + AC.activeHysteresis;
+    AC.activeSetpoint = isCooling ? AC.rawSetpoint - AC.activeHys : AC.rawSetpoint + AC.activeHys;
     const isAtActiveSetpoint = AC.currentTemp === AC.activeSetpoint;
     AC.runningFor = AC.runningSince ? now - AC.runningSince : 0;
     AC.runningAtEdgeFor = AC.runningAtEdgeSince ? now - AC.runningAtEdgeSince : 0;
-    AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.passiveHysteresis : AC.rawSetpoint - AC.passiveHysteresis;
+    AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.passiveHys : AC.rawSetpoint - AC.passiveHys;
     const isAtRestSetpoint = AC.currentTemp === AC.restSetpoint;
     AC.restingFor = AC.restingSince ? now - AC.restingSince : 0;
     AC.restingAtEdgeFor = AC.restingAtEdgeSince ? now - AC.restingAtEdgeSince : 0;
-    const isInRestRange = isCooling ? () => AC.currentTemp >= AC.rawSetpoint - AC.activeHysteresis : () => AC.currentTemp <= AC.rawSetpoint + AC.activeHysteresis;
+    const isInRestRange = isCooling ? () => AC.currentTemp >= AC.rawSetpoint - AC.activeHys : () => AC.currentTemp <= AC.rawSetpoint + AC.activeHys;
     if (AC.running) {
         AC.resting = false;
         AC.restingSince = null;
@@ -60,11 +60,11 @@ function hysteresis(rawSetpoint, mode) {
             AC.resting = false;
         }
     }
-    AC.hysteresisSetpoint = AC.resting ? AC.restSetpoint : AC.activeSetpoint;
-    setThermostat(AC.hysteresisSetpoint, mode);
+    AC.hysSetpoint = AC.resting ? AC.restSetpoint : AC.activeSetpoint;
+    setThermostat(AC.hysSetpoint, mode);
 }
 function setThermostat(setpoint, mode) {
-    if (mode !== AC.currentMode || AC.hysteresisSetpoint !== AC.currentSetpoint) {
-        $.post('/set_update', { mode: mode, setpoint: AC.hysteresisSetpoint });
+    if (mode !== AC.currentMode || AC.hysSetpoint !== AC.currentSetpoint) {
+        $.post('/set_update', { mode: mode, setpoint: AC.hysSetpoint });
     }
 }

@@ -65,4 +65,4 @@ input[type="number"] { width: 5rem; }
 .toTop {width: 2.7em; background: rgba(128,128,128,.1); opacity: 0.4; filter: invert(100%) !important;}
 .toTop:hover {cursor: pointer; filter: none !important; transition: all .3s ease-in-out;background: rgba(128,128,128,.33);
     opacity: 0.9;}
-#warning {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2rem; left: 0;}
+#warning {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2rem; margin-top:-1rem; margin-bottom:-.5rem;}

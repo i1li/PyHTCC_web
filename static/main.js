@@ -30,15 +30,6 @@ function updateStatus() {
                     document.getElementById('current-temp').textContent = `Current Temp: ` + AC.currentTemp;
                     $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
-                    const currentTime = getCurrentTime();
-                    if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
-                        AC.holdType = 'schedule'
-                        UI.holdType = 'schedule'
-                        $('input[name="hold"][value="schedule"]').prop('checked', true);
-                        updateHoldType();
-                    } else if (AC.holdType === 'schedule') {
-                        updateHoldType();
-                    }
                     resolve();
                 })
                 .catch((error) => {
@@ -48,27 +39,26 @@ function updateStatus() {
         }, timeToWait);
     });
 }
-function runTasksOnMinute() {
-    updateStatus()
-    .then(() => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                saveAppData();
-                resolve();
-            }, 1000);
-        });
-    })
-    .then(() => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                hys(AC.setpoint, AC.mode);
-                resolve();
-            }, 1000);
-        });
-    });
+async function runTasksOnMinute() {
+    try {
+        await updateStatus();
+        await new Promise(resolve => setTimeout(() => {
+            saveAppData();
+            resolve();
+        }, 1000));
+        await new Promise(resolve => setTimeout(() => {
+            updateHoldType();
+            resolve();
+        }, 1000));
+        await new Promise(resolve => setTimeout(() => {
+            hys(AC.setpoint, AC.mode);
+            resolve();
+        }, 1000));
+    } catch (error) {
+        console.error('Error in runTasksOnMinute:', error);
+    }
 }
 function updateHoldType() {
-    UI.holdType = $('input[name="hold"]:checked').val();
     const hasSchedule = $('.schedule-timeslot').length > 0;
     $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
@@ -99,45 +89,47 @@ function updateHoldType() {
         } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && AC.holdTemp !== 0) {        
             AC.setpoint = AC.holdTemp;
         }
+        const currentTime = getCurrentTime();
+        if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
+            AC.holdType = 'schedule'
+            UI.holdType = 'schedule'
+            $('input[name="hold"][value="schedule"]').prop('checked', true);
+            switchToSchedule();
+        }
     }
-$('input[name="hold"]').change(function() {
-    UI.holdType = $(this).val();
-    updateHoldType();
-    checkForChanges();
-});
-$('input[name="mode"]').on('change', function() {
-    UI.mode = $(this).val();
-    checkForChanges();
-});
-$('#setpoint').on('change', function() {
-    UI.setpoint = parseInt($(this).val(), 10);
-    checkForChanges();
-});
-$('#passive-hys').on('change', function() {
-    UI.passiveHys = parseInt($(this).val(), 10);
-    checkForChanges();
-});
-$('#active-hys').on('change', function() {
-    UI.activeHys = parseInt($(this).val(), 10);
-    checkForChanges();
-});
-$('#apply').click(function() {
-    AC.mode = UI.mode;
-    AC.setpoint = UI.setpoint;
-    AC.passiveHys = UI.passiveHys;
-    AC.activeHys = UI.activeHys;
-    AC.holdType = UI.holdType;
-    AC.holdUntil = UI.holdUntil;
-    AC.currentSchedule = UI.currentSchedule; 
-    AC.currentScheduleName = UI.currentScheduleName;
-    if (UI.holdType === 'permanent' || UI.holdType === 'temporary') {
-        AC.holdTemp = UI.setpoint;
+    function switchToSchedule() {
+        $('#setpoint').prop('readonly', true);
+        $('#temp-hold-options').hide();
+        const uiSched = getUIScheduleInfo();
+        UI.setpoint = uiSched.scheduledTemp;
+        $('#setpoint').val(UI.setpoint);
+        const acSched = getACScheduleInfo();
+        AC.setpoint = acSched.scheduledTemp;
     }
-    saveAppData()
-    .then(() => {
-        updateHoldType();
-        hys(AC.setpoint, AC.mode);
-        hasUnsavedChanges = false;
-        updateWarning();
+    function handleInputChange(property, parseAsInt = false) {
+        return function() {
+            UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
+            if (property === 'holdType') updateHoldType();
+            checkForChanges();
+        };
+    }
+    $('input[name="hold"]').change(handleInputChange('holdType'));
+    $('#hold-until').change(handleInputChange('holdUntil'));
+    $('input[name="mode"]').change(handleInputChange('mode'));
+    $('#setpoint').change(handleInputChange('setpoint', true));
+    $('#passive-hys').change(handleInputChange('passiveHys', true));
+    $('#active-hys').change(handleInputChange('activeHys', true));    
+    $('#apply').click(function() {
+        Object.assign(AC, {...UI, holdTemp: ['permanent', 'temporary'].includes(UI.holdType) ? UI.setpoint : AC.holdTemp});
+        Promise.resolve(saveAppData())
+            .then(() => Promise.resolve(updateHoldType()))
+            .then(() => {
+                hys(AC.setpoint, AC.mode);
+                hasUnsavedChanges = false;
+                updateWarning();
+            })
+            .catch(error => {
+                console.error('Error in apply process:', error);
+            });
     });
-});
+    

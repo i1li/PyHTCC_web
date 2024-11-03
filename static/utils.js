@@ -1,36 +1,22 @@
 function saveAppData() {
-    return new Promise((resolve) => {
-        localStorage.setItem('appData', JSON.stringify(AC));
-        resolve();
-    });
+    localStorage.setItem('appData', JSON.stringify(AC));
 }
 function initializeUI() {
-    scheduleNextMinute();
+    scheduleMinuteStart();
     loadScheduleList();
-    UI.mode = AC.mode;
-    $(`input[name="mode"][value="${AC.mode}"]`).prop('checked', true);
-    UI.holdType = AC.holdType;
-    $(`input[name="hold"][value="${AC.holdType}"]`).prop('checked', true);
-    UI.setpoint = AC.setpoint;
-    $('#setpoint').val(AC.setpoint);
-    UI.passiveHys = AC.passiveHys;
-    $('#passive-hys').val(AC.passiveHys);
-    UI.activeHys = AC.activeHys;
-    $('#active-hys').val(AC.activeHys);
-    if (AC.holdUntil !== undefined) {
-        UI.holdUntil = AC.holdUntil;
-        $('#hold-until').val(AC.holdUntil);
-    } else {
-        UI.holdUntil = null;  
-        $('#hold-until').val('');
-    }
-    if (AC.currentScheduleName) {
-        UI.currentScheduleName = AC.currentScheduleName;
-        $('#load-schedule').val(AC.currentScheduleName);
-        loadSchedule(AC.currentScheduleName);
+    Object.assign(UI, AC);
+    $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
+    $(`input[name="hold"][value="${UI.holdType}"]`).prop('checked', true);
+    $('#setpoint').val(UI.setpoint);
+    $('#passive-hys').val(UI.passiveHys);
+    $('#active-hys').val(UI.activeHys);
+    $('#hold-until').val(UI.holdUntil);
+    if (UI.currentScheduleName) {
+        $('#load-schedule').val(UI.currentScheduleName);
+        loadSchedule(UI.currentScheduleName);
     }
 }
-function scheduleNextMinute() {
+function scheduleMinuteStart() {
     const now = new Date();
     const delay = 60000 - (now.getSeconds() * 1000);
     setTimeout(() => {

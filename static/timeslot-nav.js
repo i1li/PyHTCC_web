@@ -12,6 +12,7 @@ function populateTimeslotNavigation(timeslot) {
     $('#next-cool-temp').val(timeslot.coolTemp);
     $('#hold-until').val(timeslot.time);
     UI.holdUntil = timeslot.time;
+    checkForChanges();
 }
 function timeslotNavigation(direction) {
     const sched = getUIScheduleInfo();

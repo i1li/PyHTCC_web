@@ -1,3 +1,4 @@
+html {scroll-behavior: smooth;}
 body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: .5rem; }
 label, input, select { display: inline-block; margin: .5rem 0; }
 button { margin: .5rem 0; padding: .5rem; width: 100%; }
@@ -5,7 +6,7 @@ button:hover, a:hover, .hold-option:hover, .mode-option:hover, .mode-option labe
 #current-temp {margin-top:0rem; margin-bottom:0rem; background-image: radial-gradient(circle, #007bff, #dc3545); border-radius:1rem; border: 1px blue solid;}
 #status, #latest-reading { display: none; margin-top: 2rem; padding: 1rem; }
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; }
-#warning {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2rem; border-radius:.5rem; border: red solid 2px;}
+#warning, #warning2 {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2rem; border-radius:.5rem; border: red solid 2px;}
 #hold-until {margin-right: 7%;}
 .mode-option, .hold-option { width: 30%; }
 .mode-option input[type="radio"], .hold-option input[type="radio"] { display: none; }

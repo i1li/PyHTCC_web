@@ -52,12 +52,21 @@ function getOneHourLaterTime() {
 function updateWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');
+    const saveScheduleElement = document.getElementById('save-schedule');
+    const warning2Element = document.getElementById('warning2');
     if (hasUnsavedChanges || hasUnsavedSchedule) {
         warningElement.style.display = 'block';
         applyElement.style.border = 'red solid 3px';
     } else {
         warningElement.style.display = 'none';
         applyElement.style.border = 'none';
+    }
+    if (!hasUnsavedChanges && hasUnsavedSchedule) {
+        warning2Element.style.display = 'block';
+        saveScheduleElement.style.border = 'red solid 3px';
+    } else if (!hasUnsavedSchedule) {
+        warning2Element.style.display = 'none';
+        saveScheduleElement.style.border = 'none';
     }
 }
 function checkForChanges() {
@@ -79,6 +88,7 @@ function checkForScheduleChanges() {
     const scheduleChanged = !schedulesEqual;
     hasUnsavedSchedule = scheduleChanged;
     updateWarning();
+    return scheduleChanged;
 }
 document.addEventListener('DOMContentLoaded', function() {
     const scheduleDiv = document.getElementById('schedule');

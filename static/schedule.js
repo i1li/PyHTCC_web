@@ -44,8 +44,8 @@ function getUIScheduleInfo() {
         nextTimeslot: nextTimeslot
     };
 }
-function getACScheduleInfo() {
-    const slots = AC.currentSchedule.timeslots || [];
+function getScheduleInfo() {
+    const slots = schedules.currentSchedule.timeslots || [];
     const timeslots = [...slots].sort((a, b) => a.time.localeCompare(b.time));
     const currentTime = getCurrentTime();
     let currentTimeslot = null;
@@ -80,34 +80,39 @@ function getACScheduleInfo() {
 }        
 function saveSchedule() {
     const sched = getUIScheduleInfo();
-    if (AC.currentScheduleName) {
-        AC.schedules[AC.currentScheduleName] = { timeslots: sched.timeslots };
+    if (schedules.currentScheduleName) {
+        schedules.schedules[schedules.currentScheduleName] = { timeslots: sched.timeslots };
     }
-    AC.currentSchedule = { timeslots: sched.timeslots };
+    schedules.currentSchedule = { timeslots: sched.timeslots };
+    localStorage.setItem('schedules', JSON.stringify(schedules));
 }
 $('#save-schedule').click(function() {
-    const name = prompt("Enter a name for this schedule:", AC.currentScheduleName);
+    const name = prompt("Enter a name for this schedule:", schedules.currentScheduleName);
     if (name) {
-        AC.currentScheduleName = name;
+        schedules.currentScheduleName = name;
         saveSchedule();
         loadScheduleList();
+        pause = false;
+        unsavedSettings = false;
+        unsavedSchedule = false;
+        updateWarning();
     }
 });
 function loadScheduleList() {
     const $loadSelect = $('#load-schedule');
     $loadSelect.find('option:not(:first)').remove();
-    Object.keys(AC.schedules).forEach(name => {
+    Object.keys(schedules.schedules).forEach(name => {
         $loadSelect.append($('<option>', { value: name, text: name }));
     });
-    if (AC.currentScheduleName) {
-        $loadSelect.val(AC.currentScheduleName);
+    if (schedules.currentScheduleName) {
+        $loadSelect.val(schedules.currentScheduleName);
     }
 }
 function loadSchedule(scheduleName) {
-    const schedule = AC.schedules[scheduleName];
+    const schedule = schedules.schedules[scheduleName];
     if (schedule) {
-        UI.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
-        UI.currentScheduleName = scheduleName;
+        schedules.currentSchedule = JSON.parse(JSON.stringify(schedule)); 
+        schedules.currentScheduleName = scheduleName;
         $('#schedule').empty();
         if (Array.isArray(schedule.timeslots)) {
             schedule.timeslots.forEach(timeslot => addTimeslot(timeslot));
@@ -121,9 +126,12 @@ function loadSchedule(scheduleName) {
 $('#load-schedule').change(function() {
     const selectedSchedule = $(this).val();
     if (selectedSchedule) {
+        pause = true;
+        unsavedSettings = true;
+        unsavedSchedule = true;
+        updateWarning();
         loadSchedule(selectedSchedule);
     }
-    checkForChanges();
 });
 function addTimeslot(timeslot = {}) {
     const newTimeslot = `
@@ -160,8 +168,8 @@ $('#importFile').change(function(event) {
         reader.onload = function(e) {
             try {
                 const importedSchedules = JSON.parse(e.target.result);
-                AC.schedules = importedSchedules;
-                alert('Schedules have been imported successfully.');
+                schedules.schedules = importedSchedules;
+                alert('Schedule import success. Select one from the menu.');
                 loadScheduleList();
             } catch (error) {
                 console.error('Error parsing JSON:', error);
@@ -172,7 +180,7 @@ $('#importFile').change(function(event) {
     }
 });
 $('#exportSchedules').click(function() {
-    const blob = new Blob([JSON.stringify(AC.schedules)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(schedules.schedules)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;

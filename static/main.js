@@ -14,21 +14,13 @@ function updateStatus() {
             const timeoutPromise = new Promise((_, reject) => {
                 timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
             });
-            const updatePromise = new Promise((resolve) => {
-                $.get('/get_status', function(data) {
-                    AC.latestReading = data;
-                    AC.running = data.running;
-                    AC.currentTemp = data.current_temp;
-                    AC.currentSetpoint = data.setpoint;
-                    AC.currentMode = data.mode;
-                    resolve();
-                });
-            });
+            const updatePromise = fetch('/get_status')
+            .then(response => response.json())
+            .then(reading => Object.assign(thermostat, reading));     
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
-                    document.getElementById('current-temp').textContent = `Current Temp: ` + AC.currentTemp;
-                    $('#latest-reading').html(`<pre>${JSON.stringify(AC.latestReading, null, 2)}</pre>`);
+                    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     resolve();
                 })
@@ -42,6 +34,7 @@ function updateStatus() {
 async function runTasksOnMinute() {
     try {
         await updateStatus();
+        if (pause) return;
         await new Promise(resolve => setTimeout(() => {
             saveAppData();
             resolve();
@@ -59,6 +52,7 @@ async function runTasksOnMinute() {
     }
 }
 function updateHoldType() {
+    const currentTime = getCurrentTime();
     const hasSchedule = $('.schedule-timeslot').length > 0;
     $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
@@ -73,23 +67,28 @@ function updateHoldType() {
             const sched = getUIScheduleInfo();
             UI.setpoint = sched.scheduledTemp;
             $('#setpoint').val(UI.setpoint);
+            populated = false;
         } else if (UI.holdType === 'temporary') {
-            const sched = getUIScheduleInfo();
-            populateTimeslotNavigation(sched.nextTimeslot);
-            $('#setpoint').prop('readonly', false);
-            $('#temp-hold-options').show();
-            UI.holdUntil = $('#hold-until').val();
-        } else { 
+            if (!populated) {
+                const sched = getUIScheduleInfo();
+                populateTimeslotNavigation(sched.nextTimeslot);
+                populated = true;
+                $('#setpoint').prop('readonly', false);
+                $('#temp-hold-options').show();
+                UI.holdUntil = $('#hold-until').val();
+            }
+        } else {
             $('#setpoint').prop('readonly', false);
             $('#temp-hold-options').hide();
+            UI.holdUntil = null;
+            populated = false;
         }
         if (AC.holdType === 'schedule') {
-            const sched = getACScheduleInfo();
+            const sched = getScheduleInfo();
             AC.setpoint = sched.scheduledTemp;        
-        } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && AC.holdTemp !== 0) {        
-            AC.setpoint = AC.holdTemp;
+        } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && holdTemp !== 0) {        
+            AC.setpoint = holdTemp;
         }
-        const currentTime = getCurrentTime();
         if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
             AC.holdType = 'schedule'
             UI.holdType = 'schedule'
@@ -103,7 +102,7 @@ function updateHoldType() {
         const uiSched = getUIScheduleInfo();
         UI.setpoint = uiSched.scheduledTemp;
         $('#setpoint').val(UI.setpoint);
-        const acSched = getACScheduleInfo();
+        const acSched = getScheduleInfo();
         AC.setpoint = acSched.scheduledTemp;
     }
     function handleInputChange(property, parseAsInt = false) {
@@ -120,13 +119,18 @@ function updateHoldType() {
     $('#passive-hys').change(handleInputChange('passiveHys', true));
     $('#active-hys').change(handleInputChange('activeHys', true));    
     $('#apply').click(function() {
-        Object.assign(AC, {...UI, holdTemp: ['permanent', 'temporary'].includes(UI.holdType) ? UI.setpoint : AC.holdTemp});
+        Object.assign(AC, UI);
+        if (['permanent', 'temporary'].includes(UI.holdType)) {
+            holdTemp = UI.setpoint;
+        }
+        pause = false;
+        unsavedSettings = false;
+        unsavedSchedule = false;
+        updateWarning();
         Promise.resolve(saveAppData())
             .then(() => Promise.resolve(updateHoldType()))
             .then(() => {
                 hys(AC.setpoint, AC.mode);
-                hasUnsavedChanges = false;
-                updateWarning();
             })
             .catch(error => {
                 console.error('Error in apply process:', error);

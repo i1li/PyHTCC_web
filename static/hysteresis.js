@@ -1,56 +1,64 @@
-function hys(rawSetpoint, mode) {
-    AC.rawSetpoint = rawSetpoint;
+function hys(setpoint, mode) {
     const now = Date.now();
     const isCooling = mode === 'cool';
-    AC.activeSetpoint = isCooling ? AC.rawSetpoint - AC.activeHys : AC.rawSetpoint + AC.activeHys;
-    const isAtActiveSetpoint = AC.currentTemp === AC.activeSetpoint;
-    AC.runningFor = AC.runningSince ? now - AC.runningSince : 0;
-    AC.runningAtEdgeFor = AC.runningAtEdgeSince ? now - AC.runningAtEdgeSince : 0;
-    AC.restSetpoint = isCooling ? AC.rawSetpoint + AC.passiveHys : AC.rawSetpoint - AC.passiveHys;
-    const isAtRestSetpoint = AC.currentTemp === AC.restSetpoint;
-    AC.restingFor = AC.restingSince ? now - AC.restingSince : 0;
-    AC.restingAtEdgeFor = AC.restingAtEdgeSince ? now - AC.restingAtEdgeSince : 0;
-    const isInRestRange = isCooling ? () => AC.currentTemp >= AC.rawSetpoint - AC.activeHys : () => AC.currentTemp <= AC.rawSetpoint + AC.activeHys;
-    if (AC.running) {
+    V.activeSetpoint = isCooling ? setpoint - AC.activeHys : setpoint + AC.activeHys;
+    const isAtActiveSetpoint = thermostat.temp === V.activeSetpoint;
+    V.runningFor = V.runningSince ? now - V.runningSince : 0;
+    V.runningAtEdgeFor = V.runningAtEdgeSince ? now - V.runningAtEdgeSince : 0;
+    V.restSetpoint = isCooling ? setpoint + AC.passiveHys : setpoint - AC.passiveHys;
+    const isAtRestSetpoint = thermostat.temp === V.restSetpoint;
+    AC.restingFor = V.restingSince ? now - V.restingSince : 0;
+    V.restingAtEdgeFor = AC.restingAtEdgeSince ? now - AC.restingAtEdgeSince : 0;
+    const isInRestRange = isCooling ? () => thermostat.temp >= setpoint - AC.activeHys : () => thermostat.temp <= setpoint + AC.activeHys;
+    if (thermostat.running) {
         AC.resting = false;
-        AC.restingSince = null;
+        V.restingSince = null;
         AC.restingAtEdgeSince = null;
-        if (!AC.runningSince) {
-            AC.runningSince = now;
+        if (!V.runningSince && V.runningFor < V.maxRunTime) {
+            V.runningSince = now;
+        } else if (V.runningFor >= V.maxRunTime) {
+            V.readyForQuickRest = true;
         }
         if (isAtActiveSetpoint) {
-            if (!AC.runningAtEdgeSince) {
-                AC.runningAtEdgeSince = now;
+            if (!V.runningAtEdgeSince) {
+                V.runningAtEdgeSince = now;
             }
-            if (AC.runningAtEdgeFor >= AC.atEdgeMinTime) {
-                AC.readyToRest = true;
+            if (V.runningAtEdgeFor >= AC.runAtEdgeMinTime) {
+                V.readyToRest = true;
             }
         } else {
-            AC.readyToRest = false;
-            AC.runningAtEdgeSince = null;
+            V.readyToRest = false;
+            V.runningAtEdgeSince = null;
         }
     } else { //running=false
-        AC.runningSince = null;
-        AC.runningAtEdgeSince = null;
+        V.runningSince = null;
+        V.runningAtEdgeSince = null;
         if (isInRestRange()) {
             if (isAtActiveSetpoint) {
-                if (AC.readyToRest) {
+                if (V.readyToRest) {
                     AC.resting = true;
-                    if (!AC.restingSince) {
-                        AC.restingSince = now;
-                    }
+                    if (!V.restingSince) {
+                        V.restingSince = now;
+                    } 
                     if (!AC.restingAtEdgeSince) {
                         AC.restingAtEdgeSince = now;
                     }
+                } else if (V.readyForQuickRest) {
+                    quickResting = true;
+                    if (!V.restingSince && V.restingFor < AC.quickRest) {
+                        V.restingSince = now;
+                    } else if (V.restingFor >= AC.quickRest) {
+                        AC.resting = false;
+                    }
                 }
             } else { // isAtActiveSetpoint=false
-                AC.readyToRest = false;
+                V.readyToRest = false;
             }
             if (isAtRestSetpoint) {
                 if (!AC.restingAtEdgeSince) {
                     AC.restingAtEdgeSince = now;
                 }
-                if (AC.restingAtEdgeFor >= AC.atEdgeMaxTime) {
+                if (V.restingAtEdgeFor >= AC.restAtEdgeMaxTime) {
                     AC.resting = false;
                 }
             } else {
@@ -60,11 +68,11 @@ function hys(rawSetpoint, mode) {
             AC.resting = false;
         }
     }
-    AC.hysSetpoint = AC.resting ? AC.restSetpoint : AC.activeSetpoint;
-    setThermostat(AC.hysSetpoint, mode);
+    V.setpointToUse = AC.resting ? V.restSetpoint : V.activeSetpoint;
+    setThermostat(V.setpointToUse, mode);
 }
 function setThermostat(setpoint, mode) {
-    if (mode !== AC.currentMode || AC.hysSetpoint !== AC.currentSetpoint) {
-        $.post('/set_update', { mode: mode, setpoint: AC.hysSetpoint });
+    if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {
+        fetch('/set_update', { method: 'POST', body: new URLSearchParams({ mode, setpoint: V.setpointToUse }) });
     }
 }

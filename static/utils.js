@@ -1,5 +1,6 @@
 function saveAppData() {
-    localStorage.setItem('appData', JSON.stringify(AC));
+    localStorage.setItem('settings', JSON.stringify(AC));
+    localStorage.setItem('schedules', JSON.stringify(schedules));
 }
 function initializeUI() {
     scheduleMinuteStart();
@@ -11,9 +12,9 @@ function initializeUI() {
     $('#passive-hys').val(UI.passiveHys);
     $('#active-hys').val(UI.activeHys);
     $('#hold-until').val(UI.holdUntil);
-    if (UI.currentScheduleName) {
-        $('#load-schedule').val(UI.currentScheduleName);
-        loadSchedule(UI.currentScheduleName);
+    if (schedules.currentScheduleName) {
+        $('#load-schedule').val(schedules.currentScheduleName);
+        loadSchedule(schedules.currentScheduleName);
     }
 }
 function scheduleMinuteStart() {
@@ -40,39 +41,34 @@ function updateWarning() {
     const applyElement = document.getElementById('apply');
     const saveScheduleElement = document.getElementById('save-schedule');
     const warning2Element = document.getElementById('warning2');
-    if (hasUnsavedChanges || hasUnsavedSchedule) {
+    if (unsavedSettings || unsavedSchedule) {
         warningElement.style.display = 'block';
         applyElement.style.border = 'red solid 3px';
     } else {
         warningElement.style.display = 'none';
         applyElement.style.border = 'none';
     }
-    if (!hasUnsavedChanges && hasUnsavedSchedule) {
+    if (!unsavedSettings && unsavedSchedule) {
         warning2Element.style.display = 'block';
         saveScheduleElement.style.border = 'red solid 3px';
-    } else if (!hasUnsavedSchedule) {
+    } else if (!unsavedSchedule) {
         warning2Element.style.display = 'none';
         saveScheduleElement.style.border = 'none';
     }
 }
 function checkForChanges() {
-    const modeChanged = UI.mode !== AC.mode;
-    const holdTypeChanged = UI.holdType !== AC.holdType;
-    const holdUntilChanged = UI.holdUntil !== AC.holdUntil;
-    const setpointChanged = UI.setpoint !== AC.setpoint;
-    const passiveHysChanged = UI.passiveHys !== AC.passiveHys;
-    const activeHysChanged = UI.activeHys !== AC.activeHys;
-    hasUnsavedChanges = modeChanged || holdTypeChanged || holdUntilChanged || setpointChanged || passiveHysChanged || activeHysChanged;
+    const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
+    unsavedSettings = changedProperties.length > 0;
     updateWarning();
 }
 function checkForScheduleChanges() {
     const uiSchedule = getUIScheduleInfo();
-    const acSchedule = getACScheduleInfo();
+    const acSchedule = getScheduleInfo();
     if (!uiSchedule || !acSchedule) return true; 
     if (!uiSchedule.timeslots || !acSchedule.timeslots) return true; 
     const schedulesEqual = JSON.stringify(uiSchedule.timeslots) === JSON.stringify(acSchedule.timeslots);
     const scheduleChanged = !schedulesEqual;
-    hasUnsavedSchedule = scheduleChanged;
+    unsavedSchedule = scheduleChanged;
     updateWarning();
     return scheduleChanged;
 }

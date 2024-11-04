@@ -3,7 +3,9 @@
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thermostat Control</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
+<script src="{{ url_for('static', filename='jquery-3.7.1.slim.min.js') }}"></script>
+<!-- <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+https://releases.jquery.com/jquery/ -->
 </head>
 <body><span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" id="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span>
 <div class="mode-container"><div class="mode-option">
@@ -13,7 +15,8 @@
 <input type="radio" id="heat" name="mode" value="heat">
 <label for="heat">Heat</label>
 </div></div>
-<center><div id="current-temp">...loading</div><div id="latest-reading"></div>
+<center><div id="current-temp">...loading</div>
+<div id="latest-reading"></div>
 <div class="row"><div class="column">
 <label for="setpoint">Temperature:</label><br>
 <input type="number" id="setpoint" />
@@ -63,6 +66,6 @@
 <script src="{{ url_for('static', filename='utils.js') }}"></script>
 <script src="{{ url_for('static', filename='hysteresis.js') }}"></script>
 <script src="{{ url_for('static', filename='main.js') }}"></script>
-<script src="{{ url_for('static', filename='timeslot-nav.js') }}"></script>
+<script src="{{ url_for('static', filename='timeslot-naV.js') }}"></script>
 </body>
 </html>

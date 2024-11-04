@@ -56,7 +56,7 @@ function manageState(action) {
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    console.log('App state sent to server successfully');
+                    console.log('App state sent to server');
                     lastFetchedState = JSON.parse(JSON.stringify(currentState)); 
                 } else {
                     console.error('Failed to send app state to server');
@@ -64,7 +64,7 @@ function manageState(action) {
             })
             .catch(error => console.error('Error sending app state to server:', error));
         } else {
-            console.log('No changes detected, app state not saved');
+            console.log('No updates.', JSON.stringify(thermostat, null, 2));
             return Promise.resolve(); 
         }
     } else {
@@ -74,9 +74,11 @@ function manageState(action) {
 }
 function hasStateChanged(currentState, lastFetchedState) {
     if (!lastFetchedState) return false;
-    return JSON.stringify(currentState.AC) !== JSON.stringify(lastFetchedState.AC) ||
-           JSON.stringify(currentState.schedules) !== JSON.stringify(lastFetchedState.schedules) ||
-           currentState.V.setpointToUse !== lastFetchedState.V.setpointToUse;
+    const sortedCurrent = sortObject(currentState);
+    const sortedLast = sortObject(lastFetchedState);
+    return !isEqual(sortedCurrent.AC, sortedLast.AC) ||
+           !isEqual(sortedCurrent.schedules, sortedLast.schedules) ||
+           !isEqual(sortedCurrent.V.setpointToUse, sortedLast.V.setpointToUse);
 }
 function initializeUI() {
     scheduleMinuteStart();

@@ -4,3 +4,4 @@ package-lock.json
 package.json
 app_state.json
 .env
+*.pyc

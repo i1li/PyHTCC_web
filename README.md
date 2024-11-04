@@ -17,7 +17,7 @@ Update the `.env` file with your login credentials you use for the Honeywell app
 (Requires Python installed on your system:)
 ```bash
 pip install -r requirements.txt
-py flask.py
+py serv.py
 ```
 
 With the Flask server running, open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory.

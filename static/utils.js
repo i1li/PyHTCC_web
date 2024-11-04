@@ -17,6 +17,35 @@ function getOneHourLaterTime() {
     const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
     return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
 }
+function sortObject(obj) {
+    if (typeof obj !== 'object' || obj === null) {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(sortObject);
+    }
+    return Object.keys(obj).sort().reduce((result, key) => {
+        result[key] = sortObject(obj[key]);
+        return result;
+    }, {});
+}
+function isEqual(obj1, obj2, tolerance = 1e-10) {
+    if (obj1 === obj2) return true;
+    if (typeof obj1 !== typeof obj2) return false;
+    if (typeof obj1 !== 'object' || obj1 === null || obj2 === null) return false;
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    if (keys1.length !== keys2.length) return false;
+    for (const key of keys1) {
+        if (!keys2.includes(key)) return false;
+        if (typeof obj1[key] === 'number' && typeof obj2[key] === 'number') {
+            if (Math.abs(obj1[key] - obj2[key]) > tolerance) return false;
+        } else if (!isEqual(obj1[key], obj2[key], tolerance)) {
+            return false;
+        }
+    }
+    return true;
+}
 function updateWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');
@@ -45,10 +74,11 @@ function checkForChanges() {
 function checkForScheduleChanges() {
     const uiSchedule = getUIScheduleInfo();
     const acSchedule = getScheduleInfo();
-    if (!uiSchedule || !acSchedule) return true; 
-    if (!uiSchedule.timeslots || !acSchedule.timeslots) return true; 
-    const schedulesEqual = JSON.stringify(uiSchedule.timeslots) === JSON.stringify(acSchedule.timeslots);
-    const scheduleChanged = !schedulesEqual;
+    if (!uiSchedule || !acSchedule) return true;
+    if (!uiSchedule.timeslots || !acSchedule.timeslots) return true;
+    const sortedUITimeslots = sortObject(uiSchedule.timeslots);
+    const sortedACTimeslots = sortObject(acSchedule.timeslots);
+    const scheduleChanged = !isEqual(sortedUITimeslots, sortedACTimeslots);
     unsavedSchedule = scheduleChanged;
     updateWarning();
     return scheduleChanged;

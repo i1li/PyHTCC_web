@@ -1,5 +1,5 @@
 ### PyHTCC_web
-A JavaScript web thermostat control built on a minimal Flask server using [PyHTCC](https://github.com/csm10495/pyhtcc), a Python library for interfacing with Honeywell Total Connect Comfort (TCC) thermostats. Active and passive hysteresis.
+JavaScript thermostat with full scheduling and hysteresis customization. Uses jQuery & a minimal Flask server with [PyHTCC](https://github.com/csm10495/pyhtcc), (Python library for Honeywell TCC thermostats.) Can run browserless with jsdom.
 
 Limitations Addressed: The Honeywell app only allows 1 saved schedule, 4 schedule timeslots per day, and scheduled changes must be in intervals of 15 minutes.
 
@@ -11,11 +11,10 @@ Limitations Addressed: The Honeywell app only allows 1 saved schedule, 4 schedul
 - [Hysteresis (AKA deadband)](#what-is-hysteresis) - Adds optional temperature tolerance to reduce frequent on/off cycles.
 
 ### Getting Started
-
 Update the `.env` file with your login credentials you use for the Honeywell app or their web portal at [mytotalconnectcomfort.com](https://mytotalconnectcomfort.com/).
 
-### Install Requirements & Run
-
+### Install Requirements & Run Flask Server:
+(Requires Python installed on your system:)
 ```bash
 pip install -r requirements.txt
 py flask.py
@@ -28,6 +27,7 @@ In this case, your browser runs the app, and sends the state back to the Flask s
 ### State Persistence & Running Without Browser or UI
 Using Node.js and jsdom (which simulates a browser environment), you can continue thermostat management without a UI by running the `no-ui.js` file while the Flask server is running.
 
+(Requires Node.js installed on your system:)
 ```bash
 npm i jsdom
 node no-ui.js

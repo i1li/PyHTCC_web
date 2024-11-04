@@ -1,22 +1,3 @@
-function saveAppData() {
-    localStorage.setItem('settings', JSON.stringify(AC));
-    localStorage.setItem('schedules', JSON.stringify(schedules));
-}
-function initializeUI() {
-    scheduleMinuteStart();
-    loadScheduleList();
-    Object.assign(UI, AC);
-    $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
-    $(`input[name="hold"][value="${UI.holdType}"]`).prop('checked', true);
-    $('#setpoint').val(UI.setpoint);
-    $('#passive-hys').val(UI.passiveHys);
-    $('#active-hys').val(UI.activeHys);
-    $('#hold-until').val(UI.holdUntil);
-    if (schedules.currentScheduleName) {
-        $('#load-schedule').val(schedules.currentScheduleName);
-        loadSchedule(schedules.currentScheduleName);
-    }
-}
 function scheduleMinuteStart() {
     const now = new Date();
     const delay = 60000 - (now.getSeconds() * 1000);

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 import os
 import time
+import json
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 load_dotenv()
 username = os.getenv('PYHTCC_EMAIL')
@@ -40,6 +41,17 @@ update_status = {
     'last_update': None,
     'update_status': None
 }
+app_state = {}
+def save_app_state():
+    with open('app_state.json', 'w') as f:
+        json.dump(app_state, f)
+def load_app_state():
+    global app_state
+    try:
+        with open('app_state.json', 'r') as f:
+            app_state = json.load(f)
+    except FileNotFoundError:
+        app_state = {}
 @app.route('/get_status')
 def get_status():
     global thermostat, update_status
@@ -97,8 +109,19 @@ def set_update():
             return jsonify(success=False, error=str(e), updated=False), 500
     else:
         return jsonify(success=True, updated=False)
+@app.route('/app_data', methods=['GET', 'POST'])
+def handle_app_data():
+    global app_state
+    if request.method == 'GET':
+        return jsonify(app_state)
+    elif request.method == 'POST':
+        new_app_state = request.json
+        app_state.update(new_app_state)
+        save_app_state()
+        return jsonify(success=True)
 @app.route('/')
 def index():
     return render_template('index.html')
 if __name__ == '__main__':
+    load_app_state()
     app.run(debug=True, port=5001)

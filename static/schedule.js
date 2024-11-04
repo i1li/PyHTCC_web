@@ -84,7 +84,6 @@ function saveSchedule() {
         schedules.schedules[schedules.currentScheduleName] = { timeslots: sched.timeslots };
     }
     schedules.currentSchedule = { timeslots: sched.timeslots };
-    localStorage.setItem('schedules', JSON.stringify(schedules));
 }
 $('#save-schedule').click(function() {
     const name = prompt("Enter a name for this schedule:", schedules.currentScheduleName);

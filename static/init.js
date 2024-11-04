@@ -1,12 +1,14 @@
 let unsavedSchedule = false;
 let unsavedSettings = false;
 let currentTimeslotIndex = -1;
+let lastFetchedState = null;
 let lastUpdateTime = 0;
 let populated = false;
 let pause = false;
+let noUI = false;
 let holdTemp = 0;
 let UI = {};
-let settings = AC = JSON.parse(localStorage.getItem('settings')) || {
+let settings = AC = {
     holdType: 'permanent',
     holdUntil: null,
     mode: 'cool',
@@ -34,11 +36,11 @@ let variables = V = {
     runningAtEdgeSince: 0,
     runningAtEdgeFor: 0,
 };
-let schedules = JSON.parse(localStorage.getItem('schedules')) || {
+let schedules = {
     schedules: {},
     currentSchedule: {},
     currentScheduleName: '',
-}
+};
 let thermostat = {
     temp: 0,
     mode: null,

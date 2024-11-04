@@ -30,7 +30,7 @@ function hys(setpoint, mode) {
             V.readyToRest = false;
             V.runningAtEdgeSince = null;
         }
-    } else { //running=false
+    } else { 
         V.runningSince = null;
         V.runningAtEdgeSince = null;
         if (isInRestRange()) {
@@ -51,7 +51,7 @@ function hys(setpoint, mode) {
                         AC.resting = false;
                     }
                 }
-            } else { // isAtActiveSetpoint=false
+            } else { 
                 V.readyToRest = false;
             }
             if (isAtRestSetpoint) {
@@ -64,7 +64,7 @@ function hys(setpoint, mode) {
             } else {
                 AC.restingAtEdgeSince = null;
             }
-        } else { // isInRestRange=false
+        } else { 
             AC.resting = false;
         }
     }
@@ -74,5 +74,17 @@ function hys(setpoint, mode) {
 function setThermostat(setpoint, mode) {
     if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {
         fetch('/set_update', { method: 'POST', body: new URLSearchParams({ mode, setpoint: V.setpointToUse }) });
+    }
+}
+function setThermostat(setpoint, mode) {
+    if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {
+        const body = new URLSearchParams({ mode, setpoint: V.setpointToUse }).toString();
+        fetch('/set_update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: body
+        });
     }
 }

@@ -78,15 +78,6 @@ function updateHoldType() {
             handleExpiredHold();
     }
 }
-function handleExpiredHold() {
-    $('#setpoint').prop('readonly', true);
-    $('#temp-hold-options').hide();
-    const uiSched = getUIScheduleInfo();
-    UI.setpoint = uiSched.scheduledTemp;
-    $('#setpoint').val(UI.setpoint);
-    const acSched = getScheduleInfo();
-    AC.setpoint = acSched.scheduledTemp;
-}
 $('#apply').click(function() {
     Object.assign(AC, UI);
     if (['permanent', 'temporary'].includes(UI.holdType)) {

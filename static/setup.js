@@ -74,11 +74,13 @@ function manageState(action) {
 }
 function hasStateChanged(currentState, lastFetchedState) {
     if (!lastFetchedState) return false;
+    if (JSON.stringify(currentState) !== JSON.stringify(lastFetchedState)) {
     const sortedCurrent = sortObject(currentState);
     const sortedLast = sortObject(lastFetchedState);
     return !isEqual(sortedCurrent.AC, sortedLast.AC) ||
            !isEqual(sortedCurrent.schedules, sortedLast.schedules) ||
            !isEqual(sortedCurrent.V.setpointToUse, sortedLast.V.setpointToUse);
+    } else return false;
 }
 function initializeUI() {
     scheduleMinuteStart();
@@ -108,3 +110,12 @@ $('input[name="mode"]').change(handleInputChange('mode'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
+function handleExpiredHold() {
+    $('#setpoint').prop('readonly', true);
+    $('#temp-hold-options').hide();
+    const uiSched = getUIScheduleInfo();
+    UI.setpoint = uiSched.scheduledTemp;
+    $('#setpoint').val(UI.setpoint);
+    const acSched = getScheduleInfo();
+    AC.setpoint = acSched.scheduledTemp;
+}

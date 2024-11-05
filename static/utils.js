@@ -1,4 +1,4 @@
-function scheduleMinuteStart() {
+function scheduleStartOfMinute() {
     const now = new Date();
     const delay = 60000 - (now.getSeconds() * 1000);
     setTimeout(() => {
@@ -46,7 +46,7 @@ function isEqual(obj1, obj2, tolerance = 1e-10) {
     }
     return true;
 }
-function updateWarning() {
+function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');
     const saveScheduleElement = document.getElementById('save-schedule');
@@ -66,12 +66,12 @@ function updateWarning() {
         saveScheduleElement.style.border = 'none';
     }
 }
-function checkForChanges() {
+function hasUIChanged() {
     const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
     unsavedSettings = changedProperties.length > 0;
-    updateWarning();
+    unsavedChangesWarning();
 }
-function checkForScheduleChanges() {
+function hasScheduleChanged() {
     const uiSchedule = getUIScheduleInfo();
     const acSchedule = getScheduleInfo();
     if (!uiSchedule || !acSchedule) return true;
@@ -80,19 +80,19 @@ function checkForScheduleChanges() {
     const sortedACTimeslots = sortObject(acSchedule.timeslots);
     const scheduleChanged = !isEqual(sortedUITimeslots, sortedACTimeslots);
     unsavedSchedule = scheduleChanged;
-    updateWarning();
+    unsavedChangesWarning();
     return scheduleChanged;
 }
 document.addEventListener('DOMContentLoaded', function() {
     const scheduleDiv = document.getElementById('schedule');
     scheduleDiv.addEventListener('input', debounce(function(event) {
-        checkForScheduleChanges();
+        hasScheduleChanged();
     }, 1500));
     scheduleDiv.addEventListener('change', function(event) {
-        checkForScheduleChanges();
+        hasScheduleChanged();
     });
     scheduleDiv.addEventListener('click', debounce(function(event) {
-        checkForScheduleChanges();
+        hasScheduleChanged();
     }, 1500));
 });
 function debounce(func, wait) {

@@ -83,7 +83,7 @@ function hasStateChanged(currentState, lastFetchedState) {
     } else return false;
 }
 function initializeUI() {
-    scheduleMinuteStart();
+    scheduleStartOfMinute();
     loadScheduleList();
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
@@ -101,7 +101,7 @@ function handleInputChange(property, parseAsInt = false) {
     return function() {
         UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
         if (property === 'holdType') updateHoldType();
-        checkForChanges();
+        hasUIChanged();
     };
 }
 $('input[name="hold"]').change(handleInputChange('holdType'));

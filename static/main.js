@@ -2,7 +2,7 @@ if (noUI) {
     manageState('load');
     updateStatus()
     .then(() => {
-        scheduleMinuteStart();
+        scheduleStartOfMinute();
         });
 } else {
     $(document).ready(function() {
@@ -86,7 +86,7 @@ $('#apply').click(function() {
     pause = false;
     unsavedSettings = false;
     unsavedSchedule = false;
-    updateWarning();
+    unsavedChangesWarning();
     Promise.resolve(manageState('save'))
         .then(() => Promise.resolve(updateHoldType()))
         .then(() => {

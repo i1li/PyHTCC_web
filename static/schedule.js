@@ -94,7 +94,7 @@ $('#save-schedule').click(function() {
         pause = false;
         unsavedSettings = false;
         unsavedSchedule = false;
-        updateWarning();
+        unsavedChangesWarning();
     }
 });
 function loadScheduleList() {
@@ -128,7 +128,7 @@ $('#load-schedule').change(function() {
         pause = true;
         unsavedSettings = true;
         unsavedSchedule = true;
-        updateWarning();
+        unsavedChangesWarning();
         loadSchedule(selectedSchedule);
     }
 });

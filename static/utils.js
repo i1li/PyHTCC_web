@@ -1,3 +1,8 @@
+function switchHoldType(holdType) {
+    AC.holdType = holdType;
+    UI.holdType = holdType;
+    $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
+}
 function scheduleStartOfMinute() {
     const now = new Date();
     const delay = 60000 - (now.getSeconds() * 1000);

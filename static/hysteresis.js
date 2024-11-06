@@ -68,13 +68,11 @@ function hys(setpoint, mode) {
             AC.resting = false;
         }
     }
-    V.setpointToUse = AC.resting ? V.restSetpoint : V.activeSetpoint;
-    setThermostat(V.setpointToUse, mode);
-}
-function setThermostat(setpoint, mode) {
-    if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {
-        fetch('/set_update', { method: 'POST', body: new URLSearchParams({ mode, setpoint: V.setpointToUse }) });
-    }
+    setpointToUse = AC.resting ? V.restSetpoint : V.activeSetpoint;
+    V.setpointToUse = setpointToUse;
+    lastEnteredMode = mode;
+    lastEnteredSetpoint = setpointToUse;
+    return setpointToUse;
 }
 function setThermostat(setpoint, mode) {
     if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {

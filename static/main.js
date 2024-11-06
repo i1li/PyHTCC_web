@@ -16,7 +16,7 @@ if (noUI) {
 async function runTasksOnMinute() {
     try {
         await updateStatus();
-        if (pause) return;
+        if (pauseUpdatesUntilSave) return;
         await new Promise(resolve => setTimeout(() => {
             manageState('save');
             resolve();
@@ -27,6 +27,7 @@ async function runTasksOnMinute() {
         }, 1000));
         await new Promise(resolve => setTimeout(() => {
             hys(AC.setpoint, AC.mode);
+            setThermostat(V.setpointToUse, AC.mode);
             resolve();
         }, 1000));
     } catch (error) {
@@ -35,6 +36,7 @@ async function runTasksOnMinute() {
 }
 function updateHoldType() {
     const currentTime = getCurrentTime();
+    const hourLater = getOneHourLaterTime();
     const hasSchedule = $('.schedule-timeslot').length > 0;
     $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
@@ -43,39 +45,39 @@ function updateHoldType() {
             UI.holdType = 'permanent';
         }
     }
-        if (UI.holdType === 'schedule') {
-            $('#setpoint').prop('readonly', true);
-            $('#temp-hold-options').hide();
-            const sched = getUIScheduleInfo();
-            UI.setpoint = sched.scheduledTemp;
-            $('#setpoint').val(UI.setpoint);
-            populated = false;
-        } else if (UI.holdType === 'temporary') {
-            if (!populated) {
-                const sched = getUIScheduleInfo();
+    if (UI.holdType === 'schedule') {
+        $('#setpoint').prop('readonly', true);
+        $('#temp-hold-options').hide();
+        const sched = getUIScheduleInfo();
+        UI.setpoint = sched.scheduledTemp;
+        $('#setpoint').val(UI.setpoint);
+        populated = false;
+    } else if (UI.holdType === 'temporary') {
+        $('#setpoint').prop('readonly', false);
+        $('#temp-hold-options').show();
+        const sched = getUIScheduleInfo();
+        UI.setpoint = holdTemp;
+        $('#setpoint').val(UI.setpoint);
+        if (!populated) {
+            if (!externalUpdate) {
                 populateTimeslotNavigation(sched.nextTimeslot);
                 populated = true;
-                $('#setpoint').prop('readonly', false);
-                $('#temp-hold-options').show();
-                UI.holdUntil = $('#hold-until').val();
+            } else {
+                populateTimeslotNavigation({ time: hourLater });
+                populated = true;
             }
-        } else {
-            $('#setpoint').prop('readonly', false);
-            $('#temp-hold-options').hide();
-            UI.holdUntil = null;
-            populated = false;
         }
-        if (AC.holdType === 'schedule') {
-            const sched = getScheduleInfo();
-            AC.setpoint = sched.scheduledTemp;        
-        } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && holdTemp !== 0) {        
-            AC.setpoint = holdTemp;
-        }
-        if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
-            AC.holdType = 'schedule'
-            UI.holdType = 'schedule'
-            $('input[name="hold"][value="schedule"]').prop('checked', true);
-            handleExpiredHold();
+    } else {
+        $('#setpoint').prop('readonly', false);
+        $('#temp-hold-options').hide();
+        UI.holdUntil = null;
+        populated = false;
+    }
+    if (AC.holdType === 'schedule') {
+        const sched = getScheduleInfo();
+        AC.setpoint = sched.scheduledTemp;        
+    } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && holdTemp !== 0) {        
+        AC.setpoint = holdTemp;
     }
 }
 $('#apply').click(function() {
@@ -83,7 +85,7 @@ $('#apply').click(function() {
     if (['permanent', 'temporary'].includes(UI.holdType)) {
         holdTemp = UI.setpoint;
     }
-    pause = false;
+    pauseUpdatesUntilSave = false;
     unsavedSettings = false;
     unsavedSchedule = false;
     unsavedChangesWarning();
@@ -91,6 +93,7 @@ $('#apply').click(function() {
         .then(() => Promise.resolve(updateHoldType()))
         .then(() => {
             hys(AC.setpoint, AC.mode);
+            setThermostat(V.setpointToUse, AC.mode);
         })
         .catch(error => {
             console.error('Error in apply process:', error);

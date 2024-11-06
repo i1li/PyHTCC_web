@@ -14,6 +14,15 @@ function updateStatus() {
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
+                    const currentTime = getCurrentTime();
+                    if (thermostat.setpoint !== lastEnteredSetpoint || thermostat.mode !== lastEnteredMode && !externalUpdate) {
+                        handleExternalUpdate();
+                    } else if (thermostat.setpoint === lastEnteredSetpoint || thermostat.mode === lastEnteredMode) {
+                        externalUpdate = false;
+                    }
+                    if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
+                        switchHoldType('schedule')
+                }
                     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     resolve();
@@ -110,12 +119,13 @@ $('input[name="mode"]').change(handleInputChange('mode'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
-function handleExpiredHold() {
-    $('#setpoint').prop('readonly', true);
-    $('#temp-hold-options').hide();
-    const uiSched = getUIScheduleInfo();
-    UI.setpoint = uiSched.scheduledTemp;
-    $('#setpoint').val(UI.setpoint);
-    const acSched = getScheduleInfo();
-    AC.setpoint = acSched.scheduledTemp;
+function handleExternalUpdate() {
+    externalUpdate = true;
+    const hourLater = getOneHourLaterTime();
+    AC.holdUntil = hourLater;
+    UI.holdUntil = AC.holdUntil;
+    AC.mode = thermostat.mode;
+    UI.mode = AC.mode;
+    holdTemp = thermostat.setpoint;
+    switchHoldType('temporary');
 }

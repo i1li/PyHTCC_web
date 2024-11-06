@@ -8,15 +8,16 @@ function initializeTimeslotIndex() {
     }
 }
 function populateTimeslotNavigation(timeslot) {
-    $('#next-heat-temp').val(timeslot.heatTemp);
-    $('#next-cool-temp').val(timeslot.coolTemp);
-    $('#hold-until').val(timeslot.time);
     UI.holdUntil = timeslot.time;
+    $('#hold-until').val(timeslot.time);
+    $('#next-cool-temp').val(timeslot.coolTemp);
+    $('#next-heat-temp').val(timeslot.heatTemp);
     hasUIChanged();
 }
 function timeslotNavigation(direction) {
     const sched = getUIScheduleInfo();
     const timeslots = sched.timeslots;
+    const hourLater = getOneHourLaterTime();
     if (currentTimeslotIndex === -1) {
         initializeTimeslotIndex();
     }
@@ -29,9 +30,9 @@ function timeslotNavigation(direction) {
     if (newTimeslot) {
         populateTimeslotNavigation(newTimeslot);
     } else {
-        populateTimeslotNavigation({ time: getOneHourLaterTime() });
+        populateTimeslotNavigation({ time: hourLater });
     }
-    UI.holdUntil = newTimeslot ? newTimeslot.time : getOneHourLaterTime();
+    UI.holdUntil = newTimeslot ? newTimeslot.time : hourLater;
 }
 $('#next-timeslot, #prev-timeslot').click(function() {
     const direction = $(this).attr('id') === 'next-timeslot' ? 'next' : 'prev';

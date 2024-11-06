@@ -44,10 +44,10 @@ function getUIScheduleInfo() {
         nextTimeslot: nextTimeslot
     };
 }
-function getScheduleInfo() {
+function getScheduleInfo(givenTime = null) {
     const slots = schedules.currentSchedule.timeslots || [];
     const timeslots = [...slots].sort((a, b) => a.time.localeCompare(b.time));
-    const currentTime = getCurrentTime();
+    const currentTime = givenTime || getCurrentTime();
     let currentTimeslot = null;
     let nextTimeslot = null;
     let scheduledTemp = AC.setpoint;
@@ -64,7 +64,9 @@ function getScheduleInfo() {
                 break;
             }
         }
-        AC.holdUntil = nextTimeslot.time;
+        if (!givenTime) {
+            AC.holdUntil = nextTimeslot.time;
+        }
         if (currentTimeslot) {
             if (AC.mode === 'cool' && currentTimeslot.coolTemp) {
                 scheduledTemp = Number(currentTimeslot.coolTemp);
@@ -77,7 +79,7 @@ function getScheduleInfo() {
         scheduledTemp: scheduledTemp,
         timeslots: timeslots
     };
-}        
+}
 function saveSchedule() {
     const sched = getUIScheduleInfo();
     if (schedules.currentScheduleName) {
@@ -91,7 +93,7 @@ $('#save-schedule').click(function() {
         schedules.currentScheduleName = name;
         saveSchedule();
         loadScheduleList();
-        pause = false;
+        pauseUpdatesUntilSave = false;
         unsavedSettings = false;
         unsavedSchedule = false;
         unsavedChangesWarning();
@@ -125,7 +127,7 @@ function loadSchedule(scheduleName) {
 $('#load-schedule').change(function() {
     const selectedSchedule = $(this).val();
     if (selectedSchedule) {
-        pause = true;
+        pauseUpdatesUntilSave = true;
         unsavedSettings = true;
         unsavedSchedule = true;
         unsavedChangesWarning();

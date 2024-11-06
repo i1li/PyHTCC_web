@@ -41,17 +41,6 @@ update_status = {
     'last_update': None,
     'update_status': None
 }
-app_state = {}
-def save_app_state():
-    with open('app_state.json', 'w') as f:
-        json.dump(app_state, f)
-def load_app_state():
-    global app_state
-    try:
-        with open('app_state.json', 'r') as f:
-            app_state = json.load(f)
-    except FileNotFoundError:
-        app_state = {}
 @app.route('/get_status')
 def get_status():
     global thermostat, update_status
@@ -102,13 +91,14 @@ def set_update():
                 'timestamp': time.time()
             }
             update_status['update_status'] = 'pending'
-            print(f"Update requested: mode={new_mode}, setpoint={new_setpoint}")
+            print(f"Update sent mode={new_mode}, setpoint={new_setpoint}")
             return jsonify(success=True, updated=True)
         except Exception as e:
             print(f"Error: {e}")
             return jsonify(success=False, error=str(e), updated=False), 500
     else:
         return jsonify(success=True, updated=False)
+app_state = {}
 @app.route('/app_data', methods=['GET', 'POST'])
 def handle_app_data():
     global app_state
@@ -119,6 +109,16 @@ def handle_app_data():
         app_state.update(new_app_state)
         save_app_state()
         return jsonify(success=True)
+def save_app_state():
+    with open('app_state.json', 'w') as f:
+        json.dump(app_state, f)
+def load_app_state():
+    global app_state
+    try:
+        with open('app_state.json', 'r') as f:
+            app_state = json.load(f)
+    except FileNotFoundError:
+        app_state = {}
 @app.route('/')
 def index():
     return render_template('index.html')

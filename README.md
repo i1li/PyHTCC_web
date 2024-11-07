@@ -29,7 +29,7 @@ Using Node.js and jsdom (which simulates a browser environment), you can continu
 
 (Requires Node.js installed on your system:)
 ```bash
-npm i jsdom
+npm i jsdom dotenv
 node no-ui.js
 ```
 

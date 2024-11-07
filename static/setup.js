@@ -8,7 +8,7 @@ function updateStatus() {
             const timeoutPromise = new Promise((_, reject) => {
                 timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
             });
-            const updatePromise = fetch('/get_status')
+            const updatePromise = fetch('/read_thermostat')
             .then(response => response.json())
             .then(reading => Object.assign(thermostat, reading));     
             Promise.race([updatePromise, timeoutPromise])
@@ -38,7 +38,7 @@ function updateStatus() {
     });
 }
 function loadState() {
-    return fetch('/app_data')
+    return fetch('/app_state')
         .then(response => response.json())
         .then(data => {
             Object.assign(AC, data.AC);
@@ -58,7 +58,7 @@ function saveState() {
         schedules
     };
     if (hasStateChanged(currentState, lastFetchedState)) {
-        return fetch('/app_data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
+        return fetch('/app_state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
         .then(response => response.json())
         .then(result => {
             if (result.success) {

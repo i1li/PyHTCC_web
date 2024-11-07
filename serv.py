@@ -8,6 +8,7 @@ app = Flask(__name__, static_folder='static', static_url_path='/static')
 load_dotenv()
 username = os.getenv('PYHTCC_EMAIL')
 password = os.getenv('PYHTCC_PASS')
+port = int(os.getenv('PORT', 5000))
 print("Username:", username, "   Password set:", bool(password))
 p = PyHTCC(username, password)
 zones_info = p.get_zones_info()
@@ -41,8 +42,8 @@ update_status = {
     'last_update': None,
     'update_status': None
 }
-@app.route('/get_status')
-def get_status():
+@app.route('/read_thermostat')
+def read_thermostat_route():
     global thermostat, update_status
     temp, setpoint, mode, running = read_thermostat(zone['Name'])
     thermostat.update({
@@ -75,8 +76,8 @@ def set_thermostat(zone_name, setpoint, mode):
             zone.set_permanent_heat_setpoint(setpoint)
     except Exception as e:
         print(f"Error: {e}")
-@app.route('/set_update', methods=['POST'])
-def set_update():
+@app.route('/set_thermostat', methods=['POST'])
+def set_thermostat_route():
     global thermostat
     new_setpoint = float(request.form['setpoint'])
     new_mode = request.form['mode']
@@ -99,8 +100,8 @@ def set_update():
     else:
         return jsonify(success=True, updated=False)
 app_state = {}
-@app.route('/app_data', methods=['GET', 'POST'])
-def handle_app_data():
+@app.route('/app_state', methods=['GET', 'POST'])
+def handle_app_state():
     global app_state
     if request.method == 'GET':
         return jsonify(app_state)
@@ -124,4 +125,4 @@ def index():
     return render_template('index.html')
 if __name__ == '__main__':
     load_app_state()
-    app.run(debug=True, port=5001)
+    app.run(debug=False, port=port)

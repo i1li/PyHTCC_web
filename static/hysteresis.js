@@ -74,7 +74,7 @@ function hys(rawSetpoint, mode) {
 }
 function setThermostat(setpoint, mode) {
     if (mode !== thermostat.mode || setpoint !== thermostat.setpoint) {
-        fetch('/set_update', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
+        fetch('/set_thermostat', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
         lastEnteredMode = mode;
         lastEnteredSetpoint = setpoint;
     }

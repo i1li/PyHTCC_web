@@ -1,3 +1,5 @@
+require('dotenv').config();
+const PORT = process.env.PORT || 5000;
 const fs = require('fs');
 const path = require('path');
 const { JSDOM, ResourceLoader } = require('jsdom');
@@ -33,7 +35,7 @@ indexHtml = indexHtml.replace(/\{\{\s*url_for\('static',\s*filename='(.+?)'\)\s*
 });
 function customFetch(url, options = {}) {
     return new Promise((resolve, reject) => {
-        const parsedUrl = new URL(url, 'http://127.0.0.1:5001');
+        const parsedUrl = new URL(url, `http://127.0.0.1:${PORT}`);
         const requestOptions = {
             hostname: parsedUrl.hostname,
             port: parsedUrl.port,
@@ -72,7 +74,7 @@ function customFetch(url, options = {}) {
     });
 }
 const dom = new JSDOM(indexHtml, {
-    url: "http://127.0.0.1:5001",
+    url: `http://127.0.0.1:${PORT}`,
     runScripts: "dangerously",
     resources: new CustomResourceLoader(),
     pretendToBeVisual: true,

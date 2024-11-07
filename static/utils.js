@@ -14,11 +14,11 @@ function scheduleStartOfMinute() {
 function formatTime(hours, minutes) {
     return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
 }
-function getCurrentTime() {
+function getTimeNow() {
     const now = new Date();
     return formatTime(now.getHours(), now.getMinutes());
 }
-function getOneHourLaterTime() {
+function getHourLater() {
     const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
     return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
 }

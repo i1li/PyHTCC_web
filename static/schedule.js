@@ -1,4 +1,41 @@
-function getUIScheduleInfo() {
+function getScheduleInfo(givenTime = null) {
+    const slots = schedules.currentSchedule.timeslots || [];
+    const timeslots = [...slots].sort((a, b) => a.time.localeCompare(b.time));
+    const timeNow = getTimeNow();
+    const timeToUse = givenTime || timeNow;
+    const hourLater = getHourLater();
+    let thisTimeslot = null;
+    let nextTimeslot = null;
+    let scheduledTemp = AC.setpoint;
+    if (timeslots.length > 0) {
+        for (let i = 0; i < timeslots.length; i++) {
+            if (timeslots[i].time <= timeToUse) {
+                thisTimeslot = timeslots[i];
+                nextTimeslot = timeslots[i + 1] || timeslots[0];
+            } else {
+                if (!thisTimeslot) {
+                    thisTimeslot = timeslots[timeslots.length - 1];
+                }
+                nextTimeslot = timeslots[i];
+                break;
+            }
+        } if (thisTimeslot) {
+            if (AC.mode === 'cool' && thisTimeslot.coolTemp) {
+                scheduledTemp = Number(thisTimeslot.coolTemp);
+            } else if (AC.mode === 'heat' && thisTimeslot.heatTemp) {
+                scheduledTemp = Number(thisTimeslot.heatTemp);
+            }
+        }
+    } else {
+        nextTimeslot = { time: hourLater };
+    }
+    return {
+        scheduledTemp: scheduledTemp,
+        timeslots: timeslots,
+        nextTimeslot: nextTimeslot
+    };
+}
+function getUIScheduleInfo(givenTime = null) {
     const slots = [];
     $('.schedule-timeslot').each(function() {
         const time = $(this).find('input[type="time"]').val();
@@ -9,75 +46,39 @@ function getUIScheduleInfo() {
         }
     });
     const timeslots = slots.sort((a, b) => a.time.localeCompare(b.time));
-    const currentTime = getCurrentTime();
-    let currentTimeslot = null;
+    const timeNow = getTimeNow();
+    const timeToUse = givenTime || timeNow;
+    const hourLater = getHourLater();
+    let thisTimeslot = null;
     let nextTimeslot = null;
     let scheduledTemp = UI.setpoint;
     if (timeslots.length > 0) {
         for (let i = 0; i < timeslots.length; i++) {
-            if (timeslots[i].time <= currentTime) {
-                currentTimeslot = timeslots[i];
+            if (timeslots[i].time <= timeToUse) {
+                thisTimeslot = timeslots[i];
                 nextTimeslot = timeslots[i + 1] || timeslots[0];
             } else {
-                if (!currentTimeslot) {
-                    currentTimeslot = timeslots[timeslots.length - 1];
+                if (!thisTimeslot) {
+                    thisTimeslot = timeslots[timeslots.length - 1];
                 }
                 nextTimeslot = timeslots[i];
                 break;
             }
-        }
-        UI.holdUntil = nextTimeslot.time;
-        if (currentTimeslot) {
-            if (UI.mode === 'cool' && currentTimeslot.coolTemp) {
-                scheduledTemp = Number(currentTimeslot.coolTemp);
-            } else if (UI.mode === 'heat' && currentTimeslot.heatTemp) {
-                scheduledTemp = Number(currentTimeslot.heatTemp);
+        } if (thisTimeslot) {
+            if (UI.mode === 'cool' && thisTimeslot.coolTemp) {
+                scheduledTemp = Number(thisTimeslot.coolTemp);
+            } else if (UI.mode === 'heat' && thisTimeslot.heatTemp) {
+                scheduledTemp = Number(thisTimeslot.heatTemp);
             }
         }
     } else {
-        nextTimeslot = { time: getOneHourLaterTime() };
+        nextTimeslot = { time: hourLater };
     }
     return {
         scheduledTemp: scheduledTemp,
         timeslots: timeslots,
-        currentTimeslot: currentTimeslot,
+        thisTimeslot: thisTimeslot,
         nextTimeslot: nextTimeslot
-    };
-}
-function getScheduleInfo(givenTime = null) {
-    const slots = schedules.currentSchedule.timeslots || [];
-    const timeslots = [...slots].sort((a, b) => a.time.localeCompare(b.time));
-    const currentTime = givenTime || getCurrentTime();
-    let currentTimeslot = null;
-    let nextTimeslot = null;
-    let scheduledTemp = AC.setpoint;
-    if (timeslots.length > 0) {
-        for (let i = 0; i < timeslots.length; i++) {
-            if (timeslots[i].time <= currentTime) {
-                currentTimeslot = timeslots[i];
-                nextTimeslot = timeslots[i + 1] || timeslots[0];
-            } else {
-                if (!currentTimeslot) {
-                    currentTimeslot = timeslots[timeslots.length - 1];
-                }
-                nextTimeslot = timeslots[i];
-                break;
-            }
-        }
-        if (!givenTime) {
-            AC.holdUntil = nextTimeslot.time;
-        }
-        if (currentTimeslot) {
-            if (AC.mode === 'cool' && currentTimeslot.coolTemp) {
-                scheduledTemp = Number(currentTimeslot.coolTemp);
-            } else if (AC.mode === 'heat' && currentTimeslot.heatTemp) {
-                scheduledTemp = Number(currentTimeslot.heatTemp);
-            }
-        }
-    }
-    return {
-        scheduledTemp: scheduledTemp,
-        timeslots: timeslots
     };
 }
 function saveSchedule() {

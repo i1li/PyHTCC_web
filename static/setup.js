@@ -14,15 +14,18 @@ function updateStatus() {
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
-                    const currentTime = getCurrentTime();
-                    if (thermostat.setpoint !== lastEnteredSetpoint || thermostat.mode !== lastEnteredMode && !externalUpdate) {
+                    const timeNow = getTimeNow();
+                    if ((lastEnteredMode && lastEnteredSetpoint) && 
+                    !externalUpdate &&
+                    (thermostat.setpoint !== lastEnteredSetpoint || 
+                     thermostat.mode !== lastEnteredMode)) {                           
                         handleExternalUpdate();
-                    } else if (thermostat.setpoint === lastEnteredSetpoint || thermostat.mode === lastEnteredMode) {
+                    } else if (thermostat.setpoint === lastEnteredSetpoint && thermostat.mode === lastEnteredMode) {
                         externalUpdate = false;
                     }
-                    if (AC.holdType === 'temporary' && AC.holdUntil && currentTime >= AC.holdUntil) {
+                    if (AC.holdType === 'temporary' && AC.holdUntil && timeNow >= AC.holdUntil) {
                         switchHoldType('schedule')
-                }
+                    }
                     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     resolve();
@@ -120,12 +123,12 @@ $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
 function handleExternalUpdate() {
-    externalUpdate = true;
-    const hourLater = getOneHourLaterTime();
-    AC.holdUntil = hourLater;
-    UI.holdUntil = AC.holdUntil;
-    AC.mode = thermostat.mode;
-    UI.mode = AC.mode;
-    holdTemp = thermostat.setpoint;
     switchHoldType('temporary');
+    externalUpdate = true;
+    const hourLater = getHourLater();
+    AC.holdUntil = hourLater;
+    AC.mode = thermostat.mode;
+    UI.mode = thermostat.mode;
+    AC.holdTemp = thermostat.setpoint;
+    UI.holdTemp = thermostat.setpoint;
 }

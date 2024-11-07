@@ -1,8 +1,8 @@
-function initializeTimeslotIndex() {
-    const sched = getUIScheduleInfo();
+function initializeTimeslotIndex(givenTime = null) {
+    const sched = getUIScheduleInfo(givenTime);
     const timeslots = sched.timeslots;
-    const currentTime = getCurrentTime();
-    currentTimeslotIndex = timeslots.findIndex(timeslot => timeslot.time > currentTime);
+    const timeNow = givenTime || getTimeNow();
+    currentTimeslotIndex = timeslots.findIndex(timeslot => timeslot.time > timeNow);
     if (currentTimeslotIndex === -1) {
         currentTimeslotIndex = 0;
     }
@@ -12,12 +12,11 @@ function populateTimeslotNavigation(timeslot) {
     $('#hold-until').val(timeslot.time);
     $('#next-cool-temp').val(timeslot.coolTemp);
     $('#next-heat-temp').val(timeslot.heatTemp);
-    hasUIChanged();
 }
 function timeslotNavigation(direction) {
     const sched = getUIScheduleInfo();
     const timeslots = sched.timeslots;
-    const hourLater = getOneHourLaterTime();
+    const hourLater = getHourLater();
     if (currentTimeslotIndex === -1) {
         initializeTimeslotIndex();
     }

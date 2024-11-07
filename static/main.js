@@ -35,8 +35,8 @@ async function runTasksOnMinute() {
     }
 }
 function updateHoldType() {
-    const currentTime = getCurrentTime();
-    const hourLater = getOneHourLaterTime();
+    const timeNow = getTimeNow();
+    const hourLater = getHourLater();
     const hasSchedule = $('.schedule-timeslot').length > 0;
     $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
@@ -51,23 +51,27 @@ function updateHoldType() {
         const sched = getUIScheduleInfo();
         UI.setpoint = sched.scheduledTemp;
         $('#setpoint').val(UI.setpoint);
+        UI.holdUntil = sched.nextTimeslot.time;
         populated = false;
     } else if (UI.holdType === 'temporary') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-options').show();
-        const sched = getUIScheduleInfo();
-        UI.setpoint = holdTemp;
+        UI.setpoint = AC.holdTemp;
         $('#setpoint').val(UI.setpoint);
+        const sched = getUIScheduleInfo();
         if (!populated) {
             if (!externalUpdate) {
                 populateTimeslotNavigation(sched.nextTimeslot);
                 populated = true;
             } else {
-                populateTimeslotNavigation({ time: hourLater });
+                initializeTimeslotIndex(hourLater);
+                populateTimeslotNavigation(sched.thisTimeslot);
+                UI.holdUntil = hourLater;
+                $('#hold-until').val(hourLater);
                 populated = true;
             }
         }
-    } else {
+    } else if (UI.holdType === 'permanent') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-options').hide();
         UI.holdUntil = null;
@@ -75,15 +79,21 @@ function updateHoldType() {
     }
     if (AC.holdType === 'schedule') {
         const sched = getScheduleInfo();
-        AC.setpoint = sched.scheduledTemp;        
-    } else if ((AC.holdType === 'permanent' || AC.holdType === 'temporary') && holdTemp !== 0) {        
-        AC.setpoint = holdTemp;
+        AC.setpoint = sched.scheduledTemp;
+        AC.holdUntil = sched.nextTimeslot.time;
+    } else if (AC.holdType === 'temporary') {
+        AC.setpoint = AC.holdTemp;
+    } else if (AC.holdType === 'permanent') {
+        AC.holdUntil = null;
+        if (AC.holdTemp !== 0) {
+            AC.setpoint = AC.holdTemp;
+        }        
     }
 }
 $('#apply').click(function() {
     Object.assign(AC, UI);
     if (['permanent', 'temporary'].includes(UI.holdType)) {
-        holdTemp = UI.setpoint;
+        AC.holdTemp = UI.setpoint;
     }
     pauseUpdatesUntilSave = false;
     unsavedSettings = false;

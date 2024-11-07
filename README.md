@@ -56,3 +56,13 @@ Typical hysteresis doesn't differentiate between active & passive, splitting the
 - In cool mode, runs until 71, then rests until 74.
 
 - In heat mode, runs until 73, then rests until 70.
+
+Switches between two different setpoints (active and rest), based on how long the system has been at edges of the range.
+
+Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode.
+
+[hysteresis.js](https://github.com/i1li/PyHTCC_web/blob/main/static/hysteresis.js)
+
+### External Changes
+
+Changes made from outside this app, (from buttons on the thermostat, or the official app), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.

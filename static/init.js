@@ -9,11 +9,11 @@ let externalUpdate = false;
 let populated = false;
 let pauseUpdatesUntilSave = false;
 let noUI = false;
-let holdTemp = 0;
 let UI = {};
 let settings = AC = {
     holdType: 'permanent',
     holdUntil: null,
+    holdTemp: 0,
     mode: 'cool',
     setpoint: 82, 
     passiveHys: 0,

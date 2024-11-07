@@ -26,7 +26,7 @@ let settings = AC = {
 let variables = V = {
     activeSetpoint: 0,
     restSetpoint: 0,
-    setpointToUse: 0,
+    adjustedSetpoint: 0,
     readyToRest: false,
     readyForQuickRest: false,
     resting: false,

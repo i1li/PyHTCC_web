@@ -1,12 +1,12 @@
 if (noUI) {
-    manageState('load');
+    loadState();
     updateStatus()
     .then(() => {
         scheduleStartOfMinute();
         });
 } else {
     $(document).ready(function() {
-        manageState('load');
+        loadState();
         updateStatus()
         .then(() => {
             initializeUI();
@@ -18,7 +18,7 @@ async function runTasksOnMinute() {
         await updateStatus();
         if (pauseUpdatesUntilSave) return;
         await new Promise(resolve => setTimeout(() => {
-            manageState('save');
+            saveState();
             resolve();
         }, 1000));
         await new Promise(resolve => setTimeout(() => {
@@ -26,8 +26,8 @@ async function runTasksOnMinute() {
             resolve();
         }, 1000));
         await new Promise(resolve => setTimeout(() => {
-            hys(AC.setpoint, AC.mode);
-            setThermostat(V.setpointToUse, AC.mode);
+            adjustedSetpoint = hys(AC.setpoint, AC.mode);
+            setThermostat(adjustedSetpoint, AC.mode);
             resolve();
         }, 1000));
     } catch (error) {
@@ -99,13 +99,11 @@ $('#apply').click(function() {
     unsavedSettings = false;
     unsavedSchedule = false;
     unsavedChangesWarning();
-    Promise.resolve(manageState('save'))
+    Promise.resolve(saveState)
         .then(() => Promise.resolve(updateHoldType()))
         .then(() => {
-            hys(AC.setpoint, AC.mode);
-            setThermostat(V.setpointToUse, AC.mode);
+            adjustedSetpoint = hys(AC.setpoint, AC.mode);
+            setThermostat(adjustedSetpoint, AC.mode);
         })
-        .catch(error => {
-            console.error('Error in apply process:', error);
-        });
+        .catch(error => {console.error('Error applying changes:', error);});
 });

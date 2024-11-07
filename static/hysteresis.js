@@ -1,15 +1,15 @@
-function hys(setpoint, mode) {
+function hys(rawSetpoint, mode) {
     const now = Date.now();
     const isCooling = mode === 'cool';
-    V.activeSetpoint = isCooling ? setpoint - AC.activeHys : setpoint + AC.activeHys;
+    V.activeSetpoint = isCooling ? rawSetpoint - AC.activeHys : rawSetpoint + AC.activeHys;
     const isAtActiveSetpoint = thermostat.temp === V.activeSetpoint;
     V.runningFor = V.runningSince ? now - V.runningSince : 0;
     V.runningAtEdgeFor = V.runningAtEdgeSince ? now - V.runningAtEdgeSince : 0;
-    V.restSetpoint = isCooling ? setpoint + AC.passiveHys : setpoint - AC.passiveHys;
+    V.restSetpoint = isCooling ? rawSetpoint + AC.passiveHys : rawSetpoint - AC.passiveHys;
     const isAtRestSetpoint = thermostat.temp === V.restSetpoint;
     V.restingFor = V.restingSince ? now - V.restingSince : 0;
     V.restingAtEdgeFor = V.restingAtEdgeSince ? now - V.restingAtEdgeSince : 0;
-    const isInRestRange = isCooling ? () => thermostat.temp >= setpoint - AC.activeHys : () => thermostat.temp <= setpoint + AC.activeHys;
+    const isInRestRange = isCooling ? () => thermostat.temp >= rawSetpoint - AC.activeHys : () => thermostat.temp <= rawSetpoint + AC.activeHys;
     if (thermostat.running) {
         V.resting = false;
         V.restingSince = null;
@@ -68,21 +68,14 @@ function hys(setpoint, mode) {
             V.resting = false;
         }
     }
-    setpointToUse = V.resting ? V.restSetpoint : V.activeSetpoint;
-    V.setpointToUse = setpointToUse;
-    lastEnteredMode = mode;
-    lastEnteredSetpoint = setpointToUse;
-    return setpointToUse;
+    adjustedSetpoint = V.resting ? V.restSetpoint : V.activeSetpoint;
+    V.adjustedSetpoint = adjustedSetpoint;
+    return adjustedSetpoint;
 }
 function setThermostat(setpoint, mode) {
-    if (mode !== thermostat.mode || V.setpointToUse !== thermostat.setpoint) {
-        const body = new URLSearchParams({ mode, setpoint: V.setpointToUse }).toString();
-        fetch('/set_update', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: body
-        });
+    if (mode !== thermostat.mode || setpoint !== thermostat.setpoint) {
+        fetch('/set_update', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
+        lastEnteredMode = mode;
+        lastEnteredSetpoint = setpoint;
     }
 }

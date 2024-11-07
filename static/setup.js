@@ -37,61 +37,49 @@ function updateStatus() {
         }, timeToWait);
     });
 }
-function manageState(action) {
-    if (action === 'load') {
-        return fetch('/app_data')
-            .then(response => response.json())
-            .then(data => {
-                Object.assign(AC, data.AC);
-                Object.assign(UI, data.UI);
-                Object.assign(V, data.V);
-                Object.assign(schedules, data.schedules);
-                lastFetchedState = JSON.parse(JSON.stringify(data)); 
-                console.log('App state retrieved from server');
-            })
-            .catch(error => console.error('Error getting app state from server:', error));
-    } else if (action === 'save') {
-        const currentState = {
-            AC,
-            UI,
-            V,
-            schedules
-        };
-        if (hasStateChanged(currentState, lastFetchedState)) {
-            return fetch('/app_data', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(currentState)
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    console.log('App state sent to server');
-                    lastFetchedState = JSON.parse(JSON.stringify(currentState)); 
-                } else {
-                    console.error('Failed to send app state to server');
-                }
-            })
-            .catch(error => console.error('Error sending app state to server:', error));
-        } else {
-            console.log('No updates.', JSON.stringify(thermostat, null, 2));
-            return Promise.resolve(); 
-        }
+function loadState() {
+    return fetch('/app_data')
+        .then(response => response.json())
+        .then(data => {
+            Object.assign(AC, data.AC);
+            Object.assign(UI, data.UI);
+            Object.assign(V, data.V);
+            Object.assign(schedules, data.schedules);
+            lastFetchedState = JSON.parse(JSON.stringify(data)); 
+            console.log('App state loaded from server');
+        })
+    .catch(error => console.error('Error getting app state from server:', error));
+}
+function saveState() {
+    const currentState = {
+        AC,
+        UI,
+        V,
+        schedules
+    };
+    if (hasStateChanged(currentState, lastFetchedState)) {
+        return fetch('/app_data', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                console.log('App state sent to server');
+                lastFetchedState = JSON.parse(JSON.stringify(currentState)); 
+            } else {
+                console.error('Failed to send app state to server');
+            }
+        })
+        .catch(error => console.error('Error sending app state to server:', error));
     } else {
-        console.error('Invalid action for manageState');
-        return Promise.reject('Invalid action');
-    }
+        console.log('State unchanged.', JSON.stringify(thermostat, null, 2));
+        return Promise.resolve(); 
+    } 
 }
 function hasStateChanged(currentState, lastFetchedState) {
     if (!lastFetchedState) return false;
     if (JSON.stringify(currentState) !== JSON.stringify(lastFetchedState)) {
     const sortedCurrent = sortObject(currentState);
     const sortedLast = sortObject(lastFetchedState);
-    return !isEqual(sortedCurrent.AC, sortedLast.AC) ||
-           !isEqual(sortedCurrent.schedules, sortedLast.schedules) ||
-           !isEqual(sortedCurrent.V.setpointToUse, sortedLast.V.setpointToUse);
+    return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules) || !isEqual(sortedCurrent.V.adjustedSetpoint, sortedLast.V.adjustedSetpoint);
     } else return false;
 }
 function initializeUI() {

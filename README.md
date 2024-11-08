@@ -11,7 +11,7 @@ Limitations Addressed: The Honeywell app only allows 1 saved schedule, 4 schedul
 - [Hysteresis (AKA deadband)](#what-is-hysteresis) - Adds optional temperature tolerance to reduce frequent on/off cycles.
 
 ### Getting Started
-Update the `.env` file with your login credentials you use for the Honeywell app or their web portal at [mytotalconnectcomfort.com](https://mytotalconnectcomfort.com/).
+Update the `.env` file with your login credentials you use for the Honeywell app or their web portal at [mytotalconnectcomfort.com](https://mytotalconnectcomfort.com/). (Optionally set a value for `PORT` here too, or it will default to 5000.)
 
 ### Install Requirements & Run Flask Server:
 (Requires Python installed on your system:)
@@ -43,26 +43,23 @@ For state persistence both the browser version, and the "no UI" jsdom version, u
 - Useful to reduce frequent on/off cycles, especially when the output of the unit is high relative to the space controlled.
 - Optional fields: leave blank or `0` for default behavior.
 
-Active Hysteresis is the amount of degrees beyond setpoint system runs to before switching to rest.
-- (A clearer term might be "Run Cycle Tolerance")
+A more descriptive term I prefer to Hysteresis is Run/Rest Cycle Tolerance, since:
 
-Passive Hysteresis is the amount of degrees beyond setpoint system rests before switching on again.
-- (A clearer term might be "Rest Cycle Tolerance")
+Active Hysteresis (Run Cycle Tolerance) is the amount of degrees beyond setpoint system runs to before switching to rest, and
 
-Typical hysteresis doesn't differentiate between active & passive, splitting the hysteresis setting evenly in both directions of setpoint. (Setting the same value for active & passive will give this result.)
+Passive Hysteresis (Rest Cycle Tolerance) is the amount of degrees beyond setpoint system rests before switching back to active mode.
 
-**Example:**  With Temp set at 72 degrees, Active Hysteresis at 1, and Passive Hysteresis at 2:
+Typical or "neutral" hysteresis doesn't differentiate between active & passive, splitting the hysteresis setting evenly in both directions of setpoint.
+
+**Hysteresis Example:**  With Temp set at 72 degrees, Active Hysteresis at 1, and Passive Hysteresis at 2:
 
 - In cool mode, runs until 71, then rests until 74.
 
 - In heat mode, runs until 73, then rests until 70.
 
-Switches between two different setpoints (active and rest), based on how long the system has been at edges of the range.
+Tracks multiple variables to switch between two different setpoints (active and rest), based on how long the system has been at edges of the range.
 
-Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode.
-
-[hysteresis.js](https://github.com/i1li/PyHTCC_web/blob/main/static/hysteresis.js)
+Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode. For more: [hysteresis.js](hysteresis.js)
 
 ### External Changes
-
-Changes made from outside this app, (from buttons on the thermostat, or the official app), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.
+Changes made from outside this app, (from the official app, or buttons on the thermostat), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.

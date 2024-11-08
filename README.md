@@ -35,6 +35,9 @@ node no-ui.js
 
 For state persistence both the browser version, and the "no UI" jsdom version, use a file created by the Flask server: `app_state.json`, saved in the project directory.
 
+### External Changes
+Changes made from outside this app, (from the official app, or buttons on the thermostat), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.
+
 ### What is Hysteresis?
 <a href="https://search.brave.com/search?q=hvac+deadband+hysteresis&source=web&summary=1&summary_og=391a2b9ee4a6faf7cb0377">Hysteresis (AKA deadband)</a> is the amount of degrees away from the setpoint allowed between active & rest cycles.
 
@@ -45,9 +48,9 @@ For state persistence both the browser version, and the "no UI" jsdom version, u
 
 A more descriptive term I prefer to Hysteresis is Run/Rest Cycle Tolerance, since:
 
-Active Hysteresis (Run Cycle Tolerance) is the amount of degrees beyond setpoint system runs to before switching to rest, and
+**Active Hysteresis (Run Cycle Tolerance)** is the amount of degrees tolerated beyond setpoint, which the system runs to before switching to rest.
 
-Passive Hysteresis (Rest Cycle Tolerance) is the amount of degrees beyond setpoint system rests before switching back to active mode.
+**Passive Hysteresis (Rest Cycle Tolerance)** is the amount of degrees tolerated beyond setpoint, which system rests to before switching back to active/run cycle.
 
 Typical or "neutral" hysteresis doesn't differentiate between active & passive, splitting the hysteresis setting evenly in both directions of setpoint.
 
@@ -57,9 +60,6 @@ Typical or "neutral" hysteresis doesn't differentiate between active & passive, 
 
 - In heat mode, runs until 73, then rests until 70.
 
-Tracks multiple variables to switch between two different setpoints (active and rest), based on how long the system has been at edges of the range.
+Tracks multiple variables to switch between two different setpoints (active and rest), based on how long the system has been at edges of the range. Minimum and maximum times for running and resting states are also enforced.
 
-Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode. For more: [hysteresis.js](hysteresis.js)
-
-### External Changes
-Changes made from outside this app, (from the official app, or buttons on the thermostat), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.
+Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode. For more: [hysteresis.js](static/hysteresis.js)

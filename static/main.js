@@ -1,45 +1,30 @@
 if (noUI) {
     loadState();
     updateStatus()
-    .then(() => {
-        scheduleStartOfMinute();
-        });
+    .then(() => { scheduleStartOfMinute(); });
 } else {
     $(document).ready(function() {
         loadState();
         updateStatus()
-        .then(() => {
-            initializeUI();
-        });
+        .then(() => { initializeUI(); });
     });
 }
 async function runTasksOnMinute() {
     try {
         await updateStatus();
         if (pauseUpdatesUntilSave) return;
-        await new Promise(resolve => setTimeout(() => {
-            saveState();
-            resolve();
-        }, 1000));
-        await new Promise(resolve => setTimeout(() => {
-            updateHoldType();
-            resolve();
-        }, 1000));
-        await new Promise(resolve => setTimeout(() => {
-            adjustedSetpoint = hys(AC.setpoint, AC.mode);
-            setThermostat(adjustedSetpoint, AC.mode);
-            resolve();
-        }, 1000));
-    } catch (error) {
-        console.error('Error in runTasksOnMinute:', error);
-    }
+        await Promise.resolve(updateHoldType());
+        await Promise.resolve(saveState());
+        await Promise.resolve(hys(AC.setpoint, AC.mode));
+        await Promise.resolve(setThermostat(V.adjustedSetpoint, AC.mode));
+    } catch (error) { console.error('Error in runTasksOnMinute:', error); }
 }
 function updateHoldType() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
     const hasSchedule = $('.schedule-timeslot').length > 0;
-    $('#follow-schedule').prop('disabled', !hasSchedule);
     if (!hasSchedule) {
+        $('#follow-schedule').prop('disabled');
         if (UI.holdType === 'schedule') {
             $('input[name="hold"][value="permanent"]').prop('checked', true);
             UI.holdType = 'permanent';
@@ -98,10 +83,8 @@ $('#apply').click(function() {
     unsavedSchedule = false;
     unsavedChangesWarning();
     Promise.resolve(saveState)
-        .then(() => Promise.resolve(updateHoldType()))
-        .then(() => {
-            hys(AC.setpoint, AC.mode);
-            setThermostat(V.adjustedSetpoint, AC.mode);
-        })
-        .catch(error => {console.error('Error applying changes:', error);});
+    .then(() => Promise.resolve(updateHoldType()))
+    .then(() => { return hys(AC.setpoint, AC.mode); })
+    .then(() => { setThermostat(V.adjustedSetpoint, AC.mode); })
+    .catch(error => { console.error('Error applying changes:', error); });
 });

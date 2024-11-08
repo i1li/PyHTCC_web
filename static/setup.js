@@ -21,6 +21,7 @@ function updateStatus() {
                     !externalUpdate &&
                     (thermostat.setpoint !== lastEnteredSetpoint || 
                      thermostat.mode !== lastEnteredMode)) {                           
+                        populated = false;
                         handleExternalUpdate();
                     } else if (thermostat.setpoint === lastEnteredSetpoint && thermostat.mode === lastEnteredMode) {
                         externalUpdate = false;

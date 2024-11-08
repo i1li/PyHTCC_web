@@ -9,7 +9,7 @@ https://releases.jquery.com/jquery/ -->
 </head>
 <body><span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" id="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span>
 <div class="mode-container"><div class="mode-option">
-<input type="radio" id="cool" name="mode" value="cool" checked>
+<input type="radio" id="cool" name="mode" value="cool">
 <label for="cool">Cool</label>
 </div><div class="mode-option">
 <input type="radio" id="heat" name="mode" value="heat">
@@ -31,12 +31,12 @@ https://releases.jquery.com/jquery/ -->
 <input type="radio" id="temp-hold" name="hold" value="temporary">
 <label for="temp-hold">Temporary Hold</label>
 </div><div class="hold-option">
-<input type="radio" id="perm-hold" name="hold" value="permanent" checked>
+<input type="radio" id="perm-hold" name="hold" value="permanent">
 <label for="perm-hold">Permanent Hold</label>
 </div></div>
 <div id="warning">* * * You have unsaved changes * * *</div>
 <div id="temp-hold-options">
-<label for="hold-until">Holds temperature setting above, until schedule resumes at following time & temp:</label>
+<label for="hold-until">Holds temperature setting above, until schedule resumes at time & temp below:</label>
 <input type="time" id="hold-until" readonly>
 <a id="prev-timeslot" title="Previous Timeslot">⏮ Back</a>&nbsp; | &nbsp;<a id="next-timeslot" title="Next Timeslot">Next ⏭</a><br>
 <div class="row"><div class="column">

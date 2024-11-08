@@ -56,7 +56,7 @@ function updateHoldType() {
     } else if (UI.holdType === 'temporary') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-options').show();
-        UI.setpoint = AC.holdTemp;
+        UI.setpoint = AC.holdTemp !== 0 ? AC.holdTemp : $('#setpoint').val();
         $('#setpoint').val(UI.setpoint);
         const sched = getUIScheduleInfo();
         if (!populated) {
@@ -74,7 +74,6 @@ function updateHoldType() {
     } else if (UI.holdType === 'permanent') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-options').hide();
-        UI.holdUntil = null;
         populated = false;
     }
     if (AC.holdType === 'schedule') {
@@ -84,7 +83,6 @@ function updateHoldType() {
     } else if (AC.holdType === 'temporary') {
         AC.setpoint = AC.holdTemp;
     } else if (AC.holdType === 'permanent') {
-        AC.holdUntil = null;
         if (AC.holdTemp !== 0) {
             AC.setpoint = AC.holdTemp;
         }        
@@ -102,8 +100,8 @@ $('#apply').click(function() {
     Promise.resolve(saveState)
         .then(() => Promise.resolve(updateHoldType()))
         .then(() => {
-            adjustedSetpoint = hys(AC.setpoint, AC.mode);
-            setThermostat(adjustedSetpoint, AC.mode);
+            hys(AC.setpoint, AC.mode);
+            setThermostat(V.adjustedSetpoint, AC.mode);
         })
         .catch(error => {console.error('Error applying changes:', error);});
 });

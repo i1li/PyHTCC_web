@@ -14,28 +14,28 @@ function hys(rawSetpoint, mode) {
         V.resting = false;
         V.restingSince = null;
         V.restingAtEdgeSince = null;
-        if (!V.runningSince && V.runningFor < AC.maxRunTime) {
+        if (!V.runningSince && V.runningFor < AC.runMaxTime) {
             V.runningSince = now;
-        } else if (V.runningFor >= AC.maxRunTime) {
-            V.readyForQuickRest = true;
+        } else if (V.runningFor >= AC.runMaxTime) {
+            V.quickRestReady = true;
         }
         if (isAtActiveSetpoint) {
             if (!V.runningAtEdgeSince) {
                 V.runningAtEdgeSince = now;
             }
             if (V.runningAtEdgeFor >= AC.runAtEdgeMinTime) {
-                V.readyToRest = true;
+                V.restReady = true;
             }
-        } else {
-            V.readyToRest = false;
+        } else if (!isAtActiveSetpoint) {
+            V.restReady = false;
             V.runningAtEdgeSince = null;
         }
-    } else { 
+    } else if (!thermostat.running) { 
         V.runningSince = null;
         V.runningAtEdgeSince = null;
         if (isInRestRange()) {
             if (isAtActiveSetpoint) {
-                if (V.readyToRest) {
+                if (V.restReady) {
                     V.resting = true;
                     if (!V.restingSince) {
                         V.restingSince = now;
@@ -43,32 +43,33 @@ function hys(rawSetpoint, mode) {
                     if (!V.restingAtEdgeSince) {
                         V.restingAtEdgeSince = now;
                     }
-                } else if (V.readyForQuickRest) {
+                } else if (V.quickRestReady) {
                     V.quickResting = true;
-                    if (!V.restingSince && V.restingFor < AC.quickRestTime) {
+                    if (!V.restingSince && V.restingFor < AC.quickRestMaxTime) {
                         V.restingSince = now;
-                    } else if (V.restingFor >= AC.quickRestTime) {
+                    } else if (V.restingFor >= AC.quickRestMaxTime) {
                         V.resting = false;
                     }
-                }
-            } else { 
-                V.readyToRest = false;
-            }
-            if (isAtRestSetpoint) {
+                } 
+            } else if (!isAtActiveSetpoint) { 
+                V.restReady = false;
+            } else if (isAtRestSetpoint) {
                 if (!V.restingAtEdgeSince) {
                     V.restingAtEdgeSince = now;
-                }
-                if (V.restingAtEdgeFor >= AC.restAtEdgeMaxTime) {
+                } else if (V.restingAtEdgeFor >= AC.restAtEdgeMaxTime) {
                     V.resting = false;
                 }
-            } else {
+            } else if (!isAtRestSetpoint) {
                 V.restingAtEdgeSince = null;
             }
-        } else { 
+            if (V.restingFor >= AC.restMaxTime) {
+                V.resting = false;
+            }
+        } else if (!isInRestRange) { 
             V.resting = false;
         }
     }
-    adjustedSetpoint = V.resting ? V.restSetpoint : V.activeSetpoint;
+    const adjustedSetpoint = V.resting ? V.restSetpoint : V.activeSetpoint;
     V.adjustedSetpoint = adjustedSetpoint;
     return adjustedSetpoint;
 }

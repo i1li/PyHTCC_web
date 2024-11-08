@@ -1,8 +1,3 @@
-function switchHoldType(holdType) {
-    AC.holdType = holdType;
-    UI.holdType = holdType;
-    $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
-}
 function scheduleStartOfMinute() {
     const now = new Date();
     const delay = 60000 - (now.getSeconds() * 1000);
@@ -50,6 +45,21 @@ function isEqual(obj1, obj2, tolerance = 1e-10) {
         }
     }
     return true;
+}
+function switchHoldType(holdType) {
+    AC.holdType = holdType;
+    UI.holdType = holdType;
+    $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
+}
+function handleExternalUpdate() {
+    switchHoldType('temporary');
+    externalUpdate = true;
+    const hourLater = getHourLater();
+    AC.holdUntil = hourLater;
+    AC.mode = thermostat.mode;
+    UI.mode = thermostat.mode;
+    AC.holdTemp = thermostat.setpoint;
+    UI.holdTemp = thermostat.setpoint;
 }
 function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');

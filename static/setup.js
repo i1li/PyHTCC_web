@@ -14,6 +14,8 @@ function updateStatus() {
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
+                    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
+                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     const timeNow = getTimeNow();
                     if ((lastEnteredMode && lastEnteredSetpoint) && 
                     !externalUpdate &&
@@ -26,8 +28,6 @@ function updateStatus() {
                     if (AC.holdType === 'temporary' && AC.holdUntil && timeNow >= AC.holdUntil) {
                         switchHoldType('schedule')
                     }
-                    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
-                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     resolve();
                 })
                 .catch((error) => {
@@ -65,7 +65,7 @@ function saveState() {
                 console.log('App state sent to server');
                 lastFetchedState = JSON.parse(JSON.stringify(currentState)); 
             } else {
-                console.error('Failed to send app state to server');
+                console.error('Failed sending app state to server');
             }
         })
         .catch(error => console.error('Error sending app state to server:', error));
@@ -110,13 +110,3 @@ $('input[name="mode"]').change(handleInputChange('mode'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
-function handleExternalUpdate() {
-    switchHoldType('temporary');
-    externalUpdate = true;
-    const hourLater = getHourLater();
-    AC.holdUntil = hourLater;
-    AC.mode = thermostat.mode;
-    UI.mode = thermostat.mode;
-    AC.holdTemp = thermostat.setpoint;
-    UI.holdTemp = thermostat.setpoint;
-}

@@ -1,38 +1,48 @@
 let lastEnteredMode = null;
 let lastEnteredSetpoint = null;
-let unsavedSchedule = false;
-let unsavedSettings = false;
-let currentTimeslotIndex = -1;
 let lastFetchedState = null;
+let pauseUpdatesUntilSave = false;
 let lastUpdateTime = 0;
 let externalUpdate = false;
 let populated = false;
-let pauseUpdatesUntilSave = false;
+let currentTimeslotIndex = -1;
+let unsavedSchedule = false;
+let unsavedSettings = false;
 let noUI = false;
 let UI = {};
 let settings = AC = {
     holdType: 'permanent',
-    holdUntil: null,
+    holdUntil: '',
     holdTemp: 0,
     mode: 'cool',
     setpoint: 82, 
     passiveHys: 0,
-    activeHys: 0,
-    runAtEdgeMinTime: 300000,
-    restAtEdgeMaxTime: 500000,
-    maxRunTime: 1500000,
-    quickRestTime: 300000,
+    activeHys: 0
 };
+const advancedSettings = {
+    runAtEdgeMinTime: 5,
+    restAtEdgeMaxTime: 8.5,
+    runMaxTime: 25,
+    restMaxTime: 50,
+    quickRestMaxTime: 5
+};
+function minutesToMilliseconds(minutes) {
+    return Math.round(minutes * 60 * 1000);
+}
+Object.entries(advancedSettings).forEach(([key, value]) => {
+    AC[key] = minutesToMilliseconds(value);
+});
 let variables = V = {
     activeSetpoint: 0,
     restSetpoint: 0,
     adjustedSetpoint: 0,
-    readyToRest: false,
-    readyForQuickRest: false,
+    restReady: false,
+    quickRestReady: false,
     resting: false,
     quickResting: false,
     restingSince: 0,
     restingFor: 0,
+    restingAtEdgeSince: 0,
     restingAtEdgeFor: 0,
     runningSince: 0,
     runningFor: 0,
@@ -46,7 +56,7 @@ let schedules = {
 };
 let thermostat = {
     temp: 0,
-    mode: null,
-    setpoint: 0,
+    mode: 'cool',
+    setpoint: 82,
     running: false,
 };

@@ -36,4 +36,5 @@ function timeslotNavigation(direction) {
 $('#next-timeslot, #prev-timeslot').click(function() {
     const direction = $(this).attr('id') === 'next-timeslot' ? 'next' : 'prev';
     timeslotNavigation(direction);
+    hasUIChanged();
 });

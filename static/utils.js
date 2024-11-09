@@ -50,21 +50,23 @@ function switchHoldType(holdType) {
     AC.holdType = holdType;
     UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
+
 }
 function handleExternalUpdate() {
-    switchHoldType('temporary');
     externalUpdate = true;
+    populated = false;
+    switchHoldType('temp');
     const hourLater = getHourLater();
-    AC.holdUntil = hourLater;
+    AC.holdTime = hourLater;
     AC.mode = thermostat.mode;
     UI.mode = thermostat.mode;
-    AC.holdTemp = thermostat.setpoint;
-    UI.holdTemp = thermostat.setpoint;
+    AC.setpoint = thermostat.setpoint;
+    UI.setpoint = thermostat.setpoint;
 }
 function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');
-    const saveScheduleElement = document.getElementById('save-schedule');
+    const saveScheduleElement = document.getElementById('save-sched');
     const warning2Element = document.getElementById('warning2');
     if (unsavedSettings || unsavedSchedule) {
         warningElement.style.display = 'block';
@@ -87,8 +89,8 @@ function hasUIChanged() {
     unsavedChangesWarning();
 }
 function hasScheduleChanged() {
-    const uiSchedule = getUIScheduleInfo();
-    const acSchedule = getScheduleInfo();
+    const uiSchedule = schedInfoUI();
+    const acSchedule = schedInfo();
     if (!uiSchedule || !acSchedule) return true;
     if (!uiSchedule.timeslots || !acSchedule.timeslots) return true;
     const sortedUITimeslots = sortObject(uiSchedule.timeslots);

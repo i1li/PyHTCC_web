@@ -79,11 +79,11 @@ def set_thermostat(zone_name, setpoint, mode):
 @app.route('/set_thermostat', methods=['POST'])
 def set_thermostat_route():
     global thermostat
-    new_setpoint = float(request.form['setpoint'])
+    new_setpoint = int(request.form['setpoint'])
     new_mode = request.form['mode']
     current_setpoint = thermostat['setpoint']
     current_mode = thermostat['mode']
-    if new_mode != current_mode or new_setpoint != current_setpoint:
+    if (new_mode != current_mode or new_setpoint != current_setpoint):
         try:
             set_thermostat(zone['Name'], new_setpoint, new_mode)
             update_status['last_update'] = {
@@ -119,7 +119,11 @@ def load_app_state():
         with open('app_state.json', 'r') as f:
             app_state = json.load(f)
     except FileNotFoundError:
-        app_state = {}
+        try:
+            with open('default_app_state.json', 'r') as f:
+                app_state = json.load(f)
+        except FileNotFoundError:
+            app_state = {}
 @app.route('/')
 def index():
     return render_template('index.html')

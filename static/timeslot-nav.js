@@ -1,5 +1,5 @@
 function initializeTimeslotIndex(givenTime = null) {
-    const sched = getUIScheduleInfo(givenTime);
+    const sched = schedInfoUI(givenTime);
     const timeslots = sched.timeslots;
     const timeNow = givenTime || getTimeNow();
     currentTimeslotIndex = timeslots.findIndex(timeslot => timeslot.time > timeNow);
@@ -7,14 +7,14 @@ function initializeTimeslotIndex(givenTime = null) {
         currentTimeslotIndex = 0;
     }
 }
-function populateTimeslotNavigation(timeslot) {
-    UI.holdUntil = timeslot.time;
-    $('#hold-until').val(timeslot.time);
+function populateTimeslotNav(timeslot) {
+    UI.holdTime = timeslot.time;
+    $('#hold-time').val(timeslot.time);
     $('#next-cool-temp').val(timeslot.coolTemp);
     $('#next-heat-temp').val(timeslot.heatTemp);
 }
 function timeslotNavigation(direction) {
-    const sched = getUIScheduleInfo();
+    const sched = schedInfoUI();
     const timeslots = sched.timeslots;
     const hourLater = getHourLater();
     if (currentTimeslotIndex === -1) {
@@ -27,11 +27,11 @@ function timeslotNavigation(direction) {
     }
     const newTimeslot = timeslots[currentTimeslotIndex];
     if (newTimeslot) {
-        populateTimeslotNavigation(newTimeslot);
+        populateTimeslotNav(newTimeslot);
     } else {
-        populateTimeslotNavigation({ time: hourLater });
+        populateTimeslotNav({ time: hourLater });
     }
-    UI.holdUntil = newTimeslot ? newTimeslot.time : hourLater;
+    UI.holdTime = newTimeslot ? newTimeslot.time : hourLater;
 }
 $('#next-timeslot, #prev-timeslot').click(function() {
     const direction = $(this).attr('id') === 'next-timeslot' ? 'next' : 'prev';

@@ -1,4 +1,4 @@
-function getScheduleInfo(givenTime = null) {
+function schedInfo(givenTime = null) {
     const slots = schedules.currentSchedule.timeslots || [];
     const timeslots = [...slots].sort((a, b) => a.time.localeCompare(b.time));
     const timeNow = getTimeNow();
@@ -26,18 +26,16 @@ function getScheduleInfo(givenTime = null) {
                 scheduledTemp = Number(thisTimeslot.heatTemp);
             }
         }
-    } else {
-        nextTimeslot = { time: hourLater };
-    }
+    } else { nextTimeslot = { time: hourLater }; }
     return {
         scheduledTemp: scheduledTemp,
         timeslots: timeslots,
         nextTimeslot: nextTimeslot
     };
 }
-function getUIScheduleInfo(givenTime = null) {
+function schedInfoUI(givenTime = null) {
     const slots = [];
-    $('.schedule-timeslot').each(function() {
+    $('.timeslot').each(function() {
         const time = $(this).find('input[type="time"]').val();
         const heatTemp = $(this).find('input.heat-input').val();
         const coolTemp = $(this).find('input.cool-input').val();
@@ -45,7 +43,7 @@ function getUIScheduleInfo(givenTime = null) {
             slots.push({ time, heatTemp, coolTemp });
         }
     });
-    const timeslots = slots.sort((a, b) => a.time.localeCompare(b.time));
+    let timeslots = slots.sort((a, b) => a.time.localeCompare(b.time));
     const timeNow = getTimeNow();
     const timeToUse = givenTime || timeNow;
     const hourLater = getHourLater();
@@ -71,9 +69,7 @@ function getUIScheduleInfo(givenTime = null) {
                 scheduledTemp = Number(thisTimeslot.heatTemp);
             }
         }
-    } else {
-        nextTimeslot = { time: hourLater };
-    }
+    } else { nextTimeslot = { time: hourLater }; }
     return {
         scheduledTemp: scheduledTemp,
         timeslots: timeslots,
@@ -82,13 +78,13 @@ function getUIScheduleInfo(givenTime = null) {
     };
 }
 function saveSchedule() {
-    const sched = getUIScheduleInfo();
+    const sched = schedInfoUI();
     if (schedules.currentScheduleName) {
         schedules.schedules[schedules.currentScheduleName] = { timeslots: sched.timeslots };
     }
     schedules.currentSchedule = { timeslots: sched.timeslots };
 }
-$('#save-schedule').click(function() {
+$('#save-sched').click(function() {
     const name = prompt("Enter a name for this schedule:", schedules.currentScheduleName);
     if (name) {
         schedules.currentScheduleName = name;
@@ -101,7 +97,7 @@ $('#save-schedule').click(function() {
     }
 });
 function loadScheduleList() {
-    const $loadSelect = $('#load-schedule');
+    const $loadSelect = $('#load-sched');
     $loadSelect.find('option:not(:first)').remove();
     Object.keys(schedules.schedules).forEach(name => {
         $loadSelect.append($('<option>', { value: name, text: name }));
@@ -121,11 +117,11 @@ function loadSchedule(scheduleName) {
         } else {
             console.error('Invalid schedule format');
         }
-        $('#load-schedule').val(scheduleName);
+        $('#load-sched').val(scheduleName);
         updateHoldType();
     }
 }
-$('#load-schedule').change(function() {
+$('#load-sched').change(function() {
     const selectedSchedule = $(this).val();
     if (selectedSchedule) {
         pauseUpdatesUntilSave = true;
@@ -137,27 +133,19 @@ $('#load-schedule').change(function() {
 });
 function addTimeslot(timeslot = {}) {
     const newTimeslot = `
-    <div class="schedule-timeslot">
-    <div class="row"><div class="column">
-    <input type="time" value="${timeslot.time}">
-    </div><div class="column">
-    <button class="remove-timeslot">Remove Timeslot</button>
-    </div></div><div class="row"><div class="column">
-    <label for="cool-temp">Cool Temp:</label>
-    <input type="number" class="cool-input" value="${timeslot.coolTemp}">
-    </div><div class="column">
-    <label for="heat-temp">Heat Temp:</label>
-    <input type="number" class="heat-input" value="${timeslot.heatTemp}">
-    </div></div></div>`;
+    <div class="timeslot"><div class="row"><div class="column">
+    <input type="time" value="${timeslot.time}"></div><div class="column"><button class="remove-timeslot">Remove Timeslot</button></div></div><div class="row"><div class="column">
+    <label for="cool-temp">Cool Temp:</label><input type="number" class="cool-input" value="${timeslot.coolTemp}"></div><div class="column">
+    <label for="heat-temp">Heat Temp:</label><input type="number" class="heat-input" value="${timeslot.heatTemp}"></div></div></div>`;
     $('#schedule').append(newTimeslot);
 }
 $('#add-timeslot').click(function() {
     addTimeslot();
 });
 $(document).on('click', '.remove-timeslot', function() {
-    $(this).closest('.schedule-timeslot').remove();
+    $(this).closest('.timeslot').remove();
 });
-$('#clear-schedule').click(function() {
+$('#clear-sched').click(function() {
     $('#schedule').empty();
 });
 $('#importSchedules').click(function() {

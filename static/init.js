@@ -1,21 +1,23 @@
-let lastEnteredMode = null;
-let lastEnteredSetpoint = null;
-let lastFetchedState = null;
-let pauseUpdatesUntilSave = false;
+let initial = true; 
+let pauseUpdatesUntilSave = true;
+let noState = true;
+let lastState = null;
+let noUI = false;
+let UI = {};
+let history = {};
+let lastMode = '';
+let lastSetpoint = 0;
 let lastUpdateTime = 0;
 let externalUpdate = false;
 let populated = false;
 let currentTimeslotIndex = -1;
 let unsavedSchedule = false;
 let unsavedSettings = false;
-let noUI = false;
-let UI = {};
 let settings = AC = {
-    holdType: 'permanent',
-    holdUntil: '',
-    holdTemp: 0,
-    mode: 'cool',
-    setpoint: 82, 
+    holdType: '',
+    holdTime: '',
+    mode: '',
+    setpoint: 0, 
     passiveHys: 0,
     activeHys: 0
 };
@@ -35,7 +37,7 @@ Object.entries(advancedSettings).forEach(([key, value]) => {
 let variables = V = {
     activeSetpoint: 0,
     restSetpoint: 0,
-    adjustedSetpoint: 0,
+    setpointToUse: 0,
     restReady: false,
     quickRestReady: false,
     resting: false,
@@ -56,7 +58,7 @@ let schedules = {
 };
 let thermostat = {
     temp: 0,
-    mode: 'cool',
-    setpoint: 82,
+    mode: '',
+    setpoint: 0,
     running: false,
 };

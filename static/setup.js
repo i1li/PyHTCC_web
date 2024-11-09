@@ -10,24 +10,28 @@ function updateStatus() {
             });
             const updatePromise = fetch('/read_thermostat')
             .then(response => response.json())
-            .then(reading => Object.assign(thermostat, reading));     
+            .then(reading => Object.assign(thermostat, reading));
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
+                    if (initial) {
+                        AC.mode = AC.mode || thermostat.mode;
+                        lastMode = lastMode || thermostat.mode;
+                        AC.setpoint = AC.setpoint || thermostat.setpoint;
+                        lastSetpoint = lastSetpoint || thermostat.setpoint;
+                        initial = false;
+                    }
                     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
                     const timeNow = getTimeNow();
-                    if ((lastEnteredMode && lastEnteredSetpoint) && 
-                    !externalUpdate &&
-                    (thermostat.setpoint !== lastEnteredSetpoint || 
-                     thermostat.mode !== lastEnteredMode)) {                           
-                        populated = false;
-                        handleExternalUpdate();
-                    } else if (thermostat.setpoint === lastEnteredSetpoint && thermostat.mode === lastEnteredMode) {
+                    if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) {
                         externalUpdate = false;
+                    } else if (!externalUpdate && (thermostat.setpoint != lastSetpoint || thermostat.mode != lastMode)) {
+                        externalUpdate = true;
+                        handleExternalUpdate();
                     }
-                    if (AC.holdType === 'temporary' && AC.holdUntil && timeNow >= AC.holdUntil) {
-                        switchHoldType('schedule')
+                    if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
+                        switchHoldType('sched')
                     }
                     resolve();
                 })
@@ -42,14 +46,23 @@ function loadState() {
     return fetch('/app_state')
         .then(response => response.json())
         .then(data => {
+            if (Object.keys(data).length === 0) {
+                pauseUpdatesUntilSave = true;
+                noState = true;
+                saveState();
+                return;
+            } else {
+                noState = false;
+                pauseUpdatesUntilSave = false;
+            }
             Object.assign(AC, data.AC);
             Object.assign(UI, data.UI);
             Object.assign(V, data.V);
             Object.assign(schedules, data.schedules);
-            lastFetchedState = JSON.parse(JSON.stringify(data)); 
-            console.log('App state loaded from server');
+            lastState = JSON.parse(JSON.stringify(data)); 
+            console.log('App state loaded');
         })
-    .catch(error => console.error('Error getting app state from server:', error));
+        .catch(error => console.error('Error getting app state:', error));
 }
 function saveState() {
     const currentState = {
@@ -58,29 +71,39 @@ function saveState() {
         V,
         schedules
     };
-    if (hasStateChanged(currentState, lastFetchedState)) {
+    if (noState) {
+        lastState = currentState;
+    }
+    if (hasStateChanged(currentState, lastState) || noState) {
         return fetch('/app_state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                console.log('App state sent to server');
-                lastFetchedState = JSON.parse(JSON.stringify(currentState)); 
+                console.log('App state sent');
+                lastState = JSON.parse(JSON.stringify(currentState));
+                if (noState) {
+                    noState = false;
+                    unsavedSettings = true;
+                    pauseUpdatesUntilSave = true;
+                    unsavedChangesWarning();
+                }
             } else {
-                console.error('Failed sending app state to server');
+                console.error('Failed sending app state');
             }
         })
-        .catch(error => console.error('Error sending app state to server:', error));
+        .catch(error => console.error('Error sending app state:', error));
     } else {
-        console.log('State unchanged.', JSON.stringify(thermostat, null, 2));
+        console.log('App state unchanged.', JSON.stringify(thermostat, null, 2));
         return Promise.resolve(); 
     } 
 }
-function hasStateChanged(currentState, lastFetchedState) {
-    if (!lastFetchedState) return false;
-    if (JSON.stringify(currentState) !== JSON.stringify(lastFetchedState)) {
+function hasStateChanged(currentState, lastState) {
+    if (!lastState) return false;
+    const yo = lastState;
+    if ((V.setpointToUse !== yo.V.setpointToUse) && (JSON.stringify(currentState) !== JSON.stringify(lastState))) {
     const sortedCurrent = sortObject(currentState);
-    const sortedLast = sortObject(lastFetchedState);
-    return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules) || !isEqual(sortedCurrent.V.adjustedSetpoint, sortedLast.V.adjustedSetpoint);
+    const sortedLast = sortObject(lastState);
+    return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);
     } else return false;
 }
 function initializeUI() {
@@ -89,12 +112,12 @@ function initializeUI() {
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
     $(`input[name="hold"][value="${UI.holdType}"]`).prop('checked', true);
+    $('#hold-time').val(UI.holdTime);
     $('#setpoint').val(UI.setpoint);
     $('#passive-hys').val(UI.passiveHys);
     $('#active-hys').val(UI.activeHys);
-    $('#hold-until').val(UI.holdUntil);
     if (schedules.currentScheduleName) {
-        $('#load-schedule').val(schedules.currentScheduleName);
+        $('#load-sched').val(schedules.currentScheduleName);
         loadSchedule(schedules.currentScheduleName);
     }
 }
@@ -105,9 +128,9 @@ function handleInputChange(property, parseAsInt = false) {
         hasUIChanged();
     };
 }
-$('input[name="hold"]').change(handleInputChange('holdType'));
-$('#hold-until').change(handleInputChange('holdUntil'));
 $('input[name="mode"]').change(handleInputChange('mode'));
+$('input[name="hold"]').change(handleInputChange('holdType'));
+$('#hold-time').change(handleInputChange('holdTime'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));

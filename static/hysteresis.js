@@ -69,14 +69,14 @@ function hys(rawSetpoint, mode) {
             V.resting = false;
         }
     }
-    const adjustedSetpoint = V.resting ? V.restSetpoint : V.activeSetpoint;
-    V.adjustedSetpoint = adjustedSetpoint;
-    return adjustedSetpoint;
+    const setpointToUse = V.resting ? V.restSetpoint : V.activeSetpoint;
+    V.setpointToUse = setpointToUse;
+    return setpointToUse;
 }
 function setThermostat(setpoint, mode) {
     if (mode !== thermostat.mode || setpoint !== thermostat.setpoint) {
         fetch('/set_thermostat', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
-        lastEnteredMode = mode;
-        lastEnteredSetpoint = setpoint;
+        lastMode = mode;
+        lastSetpoint = setpoint;
     }
 }

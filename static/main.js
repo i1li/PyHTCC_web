@@ -1,90 +1,140 @@
 if (noUI) {
-    loadState();
-    updateStatus()
-    .then(() => { scheduleStartOfMinute(); });
+    loadState()
+        .then(() => updateStatus())
+        .then(() => {
+            return scheduleStartOfMinute();
+        })
+        .catch(error => console.error('Error in noUI flow:', error));
 } else {
     $(document).ready(function() {
-        loadState();
-        updateStatus()
-        .then(() => { initializeUI(); });
+        loadState()
+            .then(() => updateStatus())
+            .then(() => {
+                return initializeUI();
+            })
+            .catch(error => console.error('Error in UI flow:', error));
     });
 }
-async function runTasksOnMinute() {
-    try {
-        await updateStatus();
-        if (pauseUpdatesUntilSave) return;
-        await Promise.resolve(updateHoldType());
-        await Promise.resolve(saveState());
-        await Promise.resolve(hys(AC.setpoint, AC.mode));
-        await Promise.resolve(setThermostat(V.adjustedSetpoint, AC.mode));
-    } catch (error) { console.error('Error in runTasksOnMinute:', error); }
+function runTasksOnMinute() {
+    Promise.resolve()
+        .then(() => {
+            return new Promise(resolve => {
+                updateStatus();
+                resolve();
+            });
+        })
+        .then(() => {
+            return new Promise(resolve => {
+                updateHoldType();
+                resolve();
+            });
+        })
+        .then(() => {
+            if (!pauseUpdatesUntilSave) {
+                return Promise.resolve()
+                    .then(() => {
+                        return new Promise(resolve => {
+                            saveState();
+                            resolve();
+                        });
+                    })
+                    .then(() => {
+                        return new Promise(resolve => {
+                            hys(AC.setpoint, AC.mode);
+                            resolve();
+                        });
+                    })
+                    .then(() => {
+                        return new Promise(resolve => {
+                            setThermostat(V.setpointToUse, AC.mode);
+                            resolve();
+                        });
+                    });
+            }
+        })
+        .catch(error => {
+            console.error('Error in runTasksOnMinute:', error);
+        });
 }
 function updateHoldType() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
-    const hasSchedule = $('.schedule-timeslot').length > 0;
+    const hasSchedule = $('.timeslot').length > 0;
     if (!hasSchedule) {
-        $('#follow-schedule').prop('disabled');
-        if (UI.holdType === 'schedule') {
-            $('input[name="hold"][value="permanent"]').prop('checked', true);
-            UI.holdType = 'permanent';
+        $('#sched-hold').prop('disabled');
+        if (UI.holdType === 'sched') {
+            $('input[name="hold"][value="perm"]').prop('checked', true);
+            UI.holdType = 'perm';
         }
     }
-    if (UI.holdType === 'schedule') {
-        $('#setpoint').prop('readonly', true);
-        $('#temp-hold-options').hide();
-        const sched = getUIScheduleInfo();
+    if (UI.holdType === 'sched') {
+        $('#setpoint').prop('readonly', false);
+        $('#temp-hold-info').hide();
+        populated = false;
+        const sched = schedInfoUI();
         UI.setpoint = sched.scheduledTemp;
         $('#setpoint').val(UI.setpoint);
-        UI.holdUntil = sched.nextTimeslot.time;
-        populated = false;
-    } else if (UI.holdType === 'temporary') {
+        UI.holdTime = sched.nextTimeslot.time;
+    } else if (UI.holdType === 'temp') {
         $('#setpoint').prop('readonly', false);
-        $('#temp-hold-options').show();
-        UI.setpoint = AC.holdTemp !== 0 ? AC.holdTemp : $('#setpoint').val();
+        $('#temp-hold-info').show();
         $('#setpoint').val(UI.setpoint);
-        const sched = getUIScheduleInfo();
+        const sched = schedInfoUI();
         if (!populated) {
             if (!externalUpdate) {
-                populateTimeslotNavigation(sched.nextTimeslot);
+                populateTimeslotNav(sched.nextTimeslot);
                 populated = true;
-            } else {
+            } else if (externalUpdate) {
                 initializeTimeslotIndex(hourLater);
-                populateTimeslotNavigation(sched.thisTimeslot);
-                UI.holdUntil = hourLater;
-                $('#hold-until').val(hourLater);
+                populateTimeslotNav(sched.thisTimeslot);
+                UI.holdTime = hourLater;
+                $('#hold-time').val(hourLater);
                 populated = true;
             }
         }
-    } else if (UI.holdType === 'permanent') {
+    } else if (UI.holdType === 'perm') {
         $('#setpoint').prop('readonly', false);
-        $('#temp-hold-options').hide();
+        $('#temp-hold-info').hide();
         populated = false;
     }
-    if (AC.holdType === 'schedule') {
-        const sched = getScheduleInfo();
+    if (AC.holdType === 'sched') {
+        const sched = schedInfo();
         AC.setpoint = sched.scheduledTemp;
-        AC.holdUntil = sched.nextTimeslot.time;
-    } else if (AC.holdType === 'temporary') {
-        AC.setpoint = AC.holdTemp;
-    } else if (AC.holdType === 'permanent') {
-        if (AC.holdTemp !== 0) {
-            AC.setpoint = AC.holdTemp;
-        }        
+        AC.holdTime = sched.nextTimeslot.time;
     }
 }
 $('#apply').click(function() {
     Object.assign(AC, UI);
-    if (['permanent', 'temporary'].includes(UI.holdType)) {
-        AC.holdTemp = UI.setpoint;
-    }
     pauseUpdatesUntilSave = false;
     unsavedSettings = false;
     unsavedSchedule = false;
     unsavedChangesWarning();
-    Promise.resolve(saveState)
-    .then(() => Promise.resolve(updateHoldType()))
-    .then(() => { return hys(AC.setpoint, AC.mode); })
-    .then(() => { setThermostat(V.adjustedSetpoint, AC.mode); })
-    .catch(error => { console.error('Error applying changes:', error); });
+    Promise.resolve()
+        .then(() => {
+            return new Promise(resolve => {
+                saveState();
+                resolve();
+            });
+        })
+        .then(() => {
+            return new Promise(resolve => {
+                updateHoldType();
+                resolve();
+            });
+        })
+        .then(() => {
+            return new Promise(resolve => {
+                hys(AC.setpoint, AC.mode);
+                resolve();
+            });
+        })
+        .then(() => {
+            return new Promise(resolve => {
+                setThermostat(V.setpointToUse, AC.mode);
+                resolve();
+            });
+        })
+        .catch(error => {
+            console.error('Error applying changes:', error);
+        });
 });

@@ -33,7 +33,7 @@ npm i jsdom dotenv
 node no-ui.js
 ```
 
-For state persistence both the browser version, and the "no UI" jsdom version, use a file created by the Flask server: `app_state.json`, saved in the project directory.
+For state persistence both the browser version, and the "no UI" jsdom version, use a file created by the Flask server: `app_state.json`, saved in the project directory. When a custom `app_state.json` has not been saved yet, default app state is initialized from `default_app_state.json`, which also comes with sample schedules.
 
 ### External Changes
 Changes made from outside this app, (from the official app, or buttons on the thermostat), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.

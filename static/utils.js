@@ -54,10 +54,10 @@ function switchHoldType(holdType) {
 }
 function handleExternalUpdate() {
     externalUpdate = true;
-    populated = false;
     switchHoldType('temp');
     const hourLater = getHourLater();
     AC.holdTime = hourLater;
+    UI.holdTime = hourLater;
     AC.mode = thermostat.mode;
     UI.mode = thermostat.mode;
     AC.setpoint = thermostat.setpoint;

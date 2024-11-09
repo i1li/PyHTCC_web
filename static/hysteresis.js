@@ -17,17 +17,17 @@ function hys(rawSetpoint, mode) {
         if (!V.runningSince && V.runningFor < AC.runMaxTime) {
             V.runningSince = now;
         } else if (V.runningFor >= AC.runMaxTime) {
-            V.quickRestReady = true;
+            V.shouldQuickRest = true;
         }
         if (isAtActiveSetpoint) {
             if (!V.runningAtEdgeSince) {
                 V.runningAtEdgeSince = now;
             }
             if (V.runningAtEdgeFor >= AC.runAtEdgeMinTime) {
-                V.restReady = true;
+                V.shouldRest = true;
             }
         } else if (!isAtActiveSetpoint) {
-            V.restReady = false;
+            V.shouldRest = false;
             V.runningAtEdgeSince = null;
         }
     } else if (!thermostat.running) { 
@@ -35,7 +35,7 @@ function hys(rawSetpoint, mode) {
         V.runningAtEdgeSince = null;
         if (isInRestRange()) {
             if (isAtActiveSetpoint) {
-                if (V.restReady) {
+                if (V.shouldRest) {
                     V.resting = true;
                     if (!V.restingSince) {
                         V.restingSince = now;
@@ -43,7 +43,7 @@ function hys(rawSetpoint, mode) {
                     if (!V.restingAtEdgeSince) {
                         V.restingAtEdgeSince = now;
                     }
-                } else if (V.quickRestReady) {
+                } else if (V.shouldQuickRest) {
                     V.quickResting = true;
                     if (!V.restingSince && V.restingFor < AC.quickRestMaxTime) {
                         V.restingSince = now;
@@ -52,7 +52,7 @@ function hys(rawSetpoint, mode) {
                     }
                 } 
             } else if (!isAtActiveSetpoint) { 
-                V.restReady = false;
+                V.shouldRest = false;
             } else if (isAtRestSetpoint) {
                 if (!V.restingAtEdgeSince) {
                     V.restingAtEdgeSince = now;

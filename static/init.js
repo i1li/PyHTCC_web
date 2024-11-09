@@ -10,6 +10,8 @@ let lastSetpoint = 0;
 let lastUpdateTime = 0;
 let externalUpdate = false;
 let populated = false;
+let shouldPopulate = false;
+let lastHoldTime = '';
 let currentTimeslotIndex = -1;
 let unsavedSchedule = false;
 let unsavedSettings = false;
@@ -38,8 +40,8 @@ let variables = V = {
     activeSetpoint: 0,
     restSetpoint: 0,
     setpointToUse: 0,
-    restReady: false,
-    quickRestReady: false,
+    shouldRest: false,
+    shouldQuickRest: false,
     resting: false,
     quickResting: false,
     restingSince: 0,

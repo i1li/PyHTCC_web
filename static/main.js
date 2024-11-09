@@ -81,17 +81,22 @@ function updateHoldType() {
         $('#setpoint').val(UI.setpoint);
         const sched = schedInfoUI();
         if (!populated) {
+            shouldPopulate = true;
+        } else if (lastHoldTime !== UI.holdTime) {
+            shouldPopulate = true;
+        }
+        if (shouldPopulate) {
             if (!externalUpdate) {
                 populateTimeslotNav(sched.nextTimeslot);
-                populated = true;
-            } else if (externalUpdate) {
+            } else {
                 initializeTimeslotIndex(hourLater);
                 populateTimeslotNav(sched.thisTimeslot);
-                UI.holdTime = hourLater;
-                $('#hold-time').val(hourLater);
-                populated = true;
             }
+            populated = true;
+            lastHoldTime = UI.holdTime;
         }
+        $('#hold-time').val(UI.holdTime);
+        lastHoldTime = UI.holdTime;
     } else if (UI.holdType === 'perm') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();

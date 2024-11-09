@@ -6,10 +6,11 @@ function initializeTimeslotIndex(givenTime = null) {
     if (currentTimeslotIndex === -1) {
         currentTimeslotIndex = 0;
     }
+    return { sched , givenTime };
 }
-function populateTimeslotNav(timeslot) {
-    UI.holdTime = timeslot.time;
-    $('#hold-time').val(timeslot.time);
+function populateTimeslotNav(timeslot, givenTime = null) {
+    UI.holdTime = givenTime || timeslot.time;
+    $('#hold-time').val(UI.holdTime);
     $('#next-cool-temp').val(timeslot.coolTemp);
     $('#next-heat-temp').val(timeslot.heatTemp);
 }

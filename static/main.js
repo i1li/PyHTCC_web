@@ -68,7 +68,7 @@ function updateHoldType() {
         }
     }
     if (UI.holdType === 'sched') {
-        $('#setpoint').prop('readonly', false);
+        $('#setpoint').prop('readonly', true);
         $('#temp-hold-info').hide();
         populated = false;
         const sched = schedInfoUI();
@@ -78,29 +78,37 @@ function updateHoldType() {
     } else if (UI.holdType === 'temp') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').show();
-        $('#setpoint').val(UI.setpoint);
-        const sched = schedInfoUI();
-        if (!populated) {
-            shouldPopulate = true;
-        } else if (lastHoldTime !== UI.holdTime) {
-            shouldPopulate = true;
+        if (!pauseUpdatesUntilSave) {
+            $('#setpoint').val(AC.setpoint);
+        } else {
+            $('#setpoint').val(UI.setpoint);
         }
-        if (shouldPopulate) {
+        const sched = schedInfoUI();
+        if (!populated || lastHoldTime !== UI.holdTime) {
             if (!externalUpdate) {
                 populateTimeslotNav(sched.nextTimeslot);
             } else {
-                initializeTimeslotIndex(hourLater);
-                populateTimeslotNav(sched.thisTimeslot);
+                const { sched, givenTime } = initializeTimeslotIndex(hourLater);
+                populateTimeslotNav(sched.thisTimeslot, givenTime);                
             }
             populated = true;
             lastHoldTime = UI.holdTime;
         }
-        $('#hold-time').val(UI.holdTime);
+        if (!pauseUpdatesUntilSave) {
+            $('#hold-time').val(AC.holdTime);
+        } else {
+            $('#hold-time').val(UI.holdTime);
+        }
         lastHoldTime = UI.holdTime;
     } else if (UI.holdType === 'perm') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();
         populated = false;
+        if (!pauseUpdatesUntilSave) {
+            $('#setpoint').val(AC.setpoint);
+        } else {
+            $('#setpoint').val(UI.setpoint);
+        }
     }
     if (AC.holdType === 'sched') {
         const sched = schedInfo();

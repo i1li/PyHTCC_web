@@ -20,9 +20,9 @@ pip install -r requirements.txt
 py serv.py
 ```
 
-With the Flask server running, open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory.
+With the Flask server running, open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory. (An update now automatically loads these from `default-app-state.json`).
 
-In this case, your browser runs the app, and sends the state back to the Flask server for persistence. Once you have saved your settings and schedule, you can run the app in a way that does not require a browser window:
+When you open the app in a browser, it sends the state back to the Flask server for persistence. Once you have saved your settings and schedule, you can run the app in a way that does not require a browser window:
 
 ### State Persistence & Running Without Browser or UI
 Using Node.js and jsdom (which simulates a browser environment), you can continue thermostat management without a UI by running the `no-ui.js` file while the Flask server is running.
@@ -33,7 +33,7 @@ npm i jsdom dotenv
 node no-ui.js
 ```
 
-For state persistence both the browser version, and the "no UI" jsdom version, use a file created by the Flask server: `app_state.json`, saved in the project directory. When a custom `app_state.json` has not been saved yet, default app state is initialized from `default_app_state.json`, which also comes with sample schedules.
+For state persistence both the browser version, and the "no UI" jsdom version, use a file created by the Flask server: `app-state.json`, saved in the project directory. When a custom `app-state.json` has not been saved yet, default app state is initialized from `default-app-state.json`, which also comes with sample schedules.
 
 ### External Changes
 Changes made from outside this app, (from the official app, or buttons on the thermostat), are detected and run through the hysteresis function, then placed on temporary hold for an hour. After an hour from latest external change, scheduled settings resume.
@@ -52,7 +52,7 @@ A more descriptive term I prefer to Hysteresis is Run/Rest Cycle Tolerance, sinc
 
 **Passive Hysteresis (Rest Cycle Tolerance)** is the amount of degrees tolerated beyond setpoint, which system rests to before switching back to active/run cycle.
 
-Typical or "neutral" hysteresis doesn't differentiate between active & passive, splitting the hysteresis setting evenly in both directions of setpoint.
+Typical hysteresis is neutral, not differentiating between active & passive, splitting the hysteresis setting evenly in both directions of setpoint.
 
 **Hysteresis Example:**  With Temp set at 72 degrees, Active Hysteresis at 1, and Passive Hysteresis at 2:
 

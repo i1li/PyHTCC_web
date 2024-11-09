@@ -14,12 +14,12 @@ function updateStatus() {
             Promise.race([updatePromise, timeoutPromise])
                 .then(() => {
                     clearTimeout(timeoutId);
-                    if (initial) {
+                    if (firstReading) {
                         AC.mode = AC.mode || thermostat.mode;
                         lastMode = lastMode || thermostat.mode;
                         AC.setpoint = AC.setpoint || thermostat.setpoint;
                         lastSetpoint = lastSetpoint || thermostat.setpoint;
-                        initial = false;
+                        firstReading = false;
                     }
                     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
                     $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
@@ -56,7 +56,6 @@ function loadState() {
                 pauseUpdatesUntilSave = false;
             }
             Object.assign(AC, data.AC);
-            Object.assign(UI, data.UI);
             Object.assign(V, data.V);
             Object.assign(schedules, data.schedules);
             lastState = JSON.parse(JSON.stringify(data)); 
@@ -67,13 +66,10 @@ function loadState() {
 function saveState() {
     const currentState = {
         AC,
-        UI,
         V,
         schedules
     };
-    if (noState) {
-        lastState = currentState;
-    }
+    if (noState) { lastState = currentState; }
     if (hasStateChanged(currentState, lastState) || noState) {
         return fetch('/app_state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
         .then(response => response.json())

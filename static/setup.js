@@ -53,7 +53,6 @@ function loadState() {
                 return;
             } else {
                 noState = false;
-                pauseUpdatesUntilSave = false;
             }
             Object.assign(AC, data.AC);
             Object.assign(V, data.V);
@@ -95,8 +94,8 @@ function saveState() {
 }
 function hasStateChanged(currentState, lastState) {
     if (!lastState) return false;
-    const yo = lastState;
-    if ((V.setpointToUse !== yo.V.setpointToUse) && (JSON.stringify(currentState) !== JSON.stringify(lastState))) {
+    const _ = lastState;
+    if ((V.setpointToUse !== _.V.setpointToUse) && (JSON.stringify(currentState) !== JSON.stringify(lastState))) {
     const sortedCurrent = sortObject(currentState);
     const sortedLast = sortObject(lastState);
     return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);

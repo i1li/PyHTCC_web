@@ -111,16 +111,16 @@ def handle_app_state():
         save_app_state()
         return jsonify(success=True)
 def save_app_state():
-    with open('app_state.json', 'w') as f:
+    with open('app-state.json', 'w') as f:
         json.dump(app_state, f)
 def load_app_state():
     global app_state
     try:
-        with open('app_state.json', 'r') as f:
+        with open('app-state.json', 'r') as f:
             app_state = json.load(f)
     except FileNotFoundError:
         try:
-            with open('default_app_state.json', 'r') as f:
+            with open('default-app-state.json', 'r') as f:
                 app_state = json.load(f)
         except FileNotFoundError:
             app_state = {}

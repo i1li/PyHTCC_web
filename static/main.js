@@ -2,7 +2,7 @@ if (noUI) {
     loadState()
         .then(() => updateStatus())
         .then(() => {
-            return scheduleStartOfMinute();
+            return maintainTiming();
         })
         .catch(error => console.error('Error in noUI flow:', error));
 } else {
@@ -15,7 +15,7 @@ if (noUI) {
             .catch(error => console.error('Error in UI flow:', error));
     });
 }
-function runTasksOnMinute() {
+function scheduledTasks() {
     Promise.resolve()
         .then(() => {
             return new Promise(resolve => {
@@ -53,7 +53,7 @@ function runTasksOnMinute() {
             }
         })
         .catch(error => {
-            console.error('Error in runTasksOnMinute:', error);
+            console.error('Error in scheduledTasks:', error);
         });
 }
 function updateStatus() {
@@ -126,21 +126,15 @@ function updateHoldType() {
             populated = true;
             lastHoldTime = UI.holdTime;
         }
-        if (!pauseUpdatesUntilSave) {
-            $('#hold-time').val(AC.holdTime);
-        } else {
-            $('#hold-time').val(UI.holdTime);
-        }
+        if (!pauseUpdatesUntilSave) { $('#hold-time').val(AC.holdTime);
+        } else { $('#hold-time').val(UI.holdTime); }
         lastHoldTime = UI.holdTime;
     } else if (UI.holdType === 'perm') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();
         populated = false;
-        if (!pauseUpdatesUntilSave) {
-            $('#setpoint').val(AC.setpoint);
-        } else {
-            $('#setpoint').val(UI.setpoint);
-        }
+        if (!pauseUpdatesUntilSave) { $('#setpoint').val(AC.setpoint);
+        } else { $('#setpoint').val(UI.setpoint); }
     }
     if (AC.holdType === 'sched') {
         const sched = schedInfo();

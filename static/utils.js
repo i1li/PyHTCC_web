@@ -1,11 +1,21 @@
-function scheduleStartOfMinute() {
+function maintainTiming() {
+    let count = 0;
     const now = new Date();
-    const delay = 60000 - (now.getSeconds() * 1000);
-    setTimeout(() => {
-        runTasksOnMinute();
-        setInterval(runTasksOnMinute, 60000);
+    const delay = (60 - now.getSeconds()) * 1000;
+    setTimeout(function run() {
+        scheduledTasks();
+        count++;
+        if (count > 99) {
+            count = 0;
+            const drift = new Date().getSeconds();
+            if (drift > 9) {
+                setTimeout(run, (60 - drift) * 1000);
+                return;
+            }
+        }
+        setTimeout(run, 60000);
     }, delay);
-}
+}    
 function formatTime(hours, minutes) {
     return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
 }

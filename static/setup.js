@@ -1,5 +1,5 @@
 function initializeUI() {
-    scheduleStartOfMinute();
+    maintainTiming();
     loadScheduleList();
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
@@ -34,8 +34,7 @@ function handleUpdates() {
         lastSetpoint = lastSetpoint || thermostat.setpoint;
         firstReading = false;
         pauseUpdatesUntilSave = false;
-    } else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) {
-        externalUpdate = false;
+    } else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) { externalUpdate = false;
     } else if (thermostat.setpoint != lastSetpoint || thermostat.mode != lastMode) {
         populated = false;
         externalUpdate = true;
@@ -53,9 +52,7 @@ function loadState() {
                 noState = true;
                 saveState();
                 return;
-            } else {
-                noState = false;
-            }
+            } else { noState = false; }
             Object.assign(AC, data.AC);
             Object.assign(V, data.V);
             Object.assign(schedules, data.schedules);
@@ -75,8 +72,7 @@ function saveState() {
         return fetch('/app_state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
         .then(response => response.json())
         .then(result => {
-            if (result.success) {
-                console.log('App state sent');
+            if (result.success) { console.log('App state sent');
                 lastState = JSON.parse(JSON.stringify(currentState));
                 if (noState) {
                     noState = false;
@@ -84,15 +80,11 @@ function saveState() {
                     pauseUpdatesUntilSave = true;
                     unsavedChangesWarning();
                 }
-            } else {
-                console.error('Failed sending app state');
-            }
+            } else { console.error('Failed sending app state'); }
         })
         .catch(error => console.error('Error sending app state:', error));
-    } else {
-        console.log('App state unchanged.', JSON.stringify(thermostat, null, 2));
-        return Promise.resolve(); 
-    } 
+    } else { console.log('App state unchanged.', JSON.stringify(thermostat, null, 2));
+        return Promise.resolve(); } 
 }
 function hasStateChanged(currentState, lastState) {
     if (!lastState) return false;

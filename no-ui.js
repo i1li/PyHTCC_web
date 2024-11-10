@@ -96,11 +96,11 @@ global.console = {
 };
 (function() {
     try {
-        console.log('Initial app state loaded');
+        console.log('no-ui.js success');
         const event = new dom.window.Event('DOMContentLoaded');
         dom.window.document.dispatchEvent(event);
     } catch (error) {
-        console.error('Error initializing app:', error);
+        console.error('no-ui.js error:', error);
     }
 })();
 setInterval(() => {}, 1000);

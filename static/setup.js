@@ -1,46 +1,48 @@
-function updateStatus() {
-    return new Promise((resolve, reject) => {
-        const now = Date.now();
-        const timeToWait = Math.max(0, 30000 - (now - lastUpdateTime));
-        setTimeout(() => {
-            lastUpdateTime = Date.now();
-            let timeoutId;
-            const timeoutPromise = new Promise((_, reject) => {
-                timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
-            });
-            const updatePromise = fetch('/read_thermostat')
-            .then(response => response.json())
-            .then(reading => Object.assign(thermostat, reading));
-            Promise.race([updatePromise, timeoutPromise])
-                .then(() => {
-                    clearTimeout(timeoutId);
-                    if (firstReading) {
-                        AC.mode = AC.mode || thermostat.mode;
-                        lastMode = lastMode || thermostat.mode;
-                        AC.setpoint = AC.setpoint || thermostat.setpoint;
-                        lastSetpoint = lastSetpoint || thermostat.setpoint;
-                        firstReading = false;
-                    }
-                    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
-                    $('#status').html(`<pre>${JSON.stringify(AC, null, 2)}</pre>`);
-                    const timeNow = getTimeNow();
-                    if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) {
-                        externalUpdate = false;
-                    } else if (!externalUpdate && (thermostat.setpoint != lastSetpoint || thermostat.mode != lastMode)) {
-                        externalUpdate = true;
-                        handleExternalUpdate();
-                    }
-                    if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
-                        switchHoldType('sched')
-                    }
-                    resolve();
-                })
-                .catch((error) => {
-                    clearTimeout(timeoutId);
-                    reject(error);
-                });
-        }, timeToWait);
-    });
+function initializeUI() {
+    scheduleStartOfMinute();
+    loadScheduleList();
+    Object.assign(UI, AC);
+    $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
+    $(`input[name="hold"][value="${UI.holdType}"]`).prop('checked', true);
+    $('#hold-time').val(UI.holdTime);
+    $('#setpoint').val(UI.setpoint);
+    $('#passive-hys').val(UI.passiveHys);
+    $('#active-hys').val(UI.activeHys);
+    if (schedules.currentScheduleName) {
+        $('#load-sched').val(schedules.currentScheduleName);
+        loadSchedule(schedules.currentScheduleName);
+    }
+}
+function handleInputChange(property, parseAsInt = false) {
+    return function() {
+        UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
+        if (property === 'holdType') updateHoldType();
+        hasUIChanged();
+    };
+}
+$('input[name="mode"]').change(handleInputChange('mode'));
+$('input[name="hold"]').change(handleInputChange('holdType'));
+$('#hold-time').change(handleInputChange('holdTime'));
+$('#setpoint').change(handleInputChange('setpoint', true));
+$('#passive-hys').change(handleInputChange('passiveHys', true));
+$('#active-hys').change(handleInputChange('activeHys', true));
+function handleUpdates() {
+    if (firstReading) {
+        AC.mode = AC.mode || thermostat.mode;
+        lastMode = lastMode || thermostat.mode;
+        AC.setpoint = AC.setpoint || thermostat.setpoint;
+        lastSetpoint = lastSetpoint || thermostat.setpoint;
+        firstReading = false;
+        pauseUpdatesUntilSave = false;
+    } else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) {
+        externalUpdate = false;
+    } else if (thermostat.setpoint != lastSetpoint || thermostat.mode != lastMode) {
+        populated = false;
+        externalUpdate = true;
+        switchHoldType('temp');
+        AC.mode = UI.mode = thermostat.mode;
+        AC.setpoint = UI.setpoint = thermostat.setpoint;
+    }
 }
 function loadState() {
     return fetch('/app_state')
@@ -101,31 +103,3 @@ function hasStateChanged(currentState, lastState) {
     return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);
     } else return false;
 }
-function initializeUI() {
-    scheduleStartOfMinute();
-    loadScheduleList();
-    Object.assign(UI, AC);
-    $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
-    $(`input[name="hold"][value="${UI.holdType}"]`).prop('checked', true);
-    $('#hold-time').val(UI.holdTime);
-    $('#setpoint').val(UI.setpoint);
-    $('#passive-hys').val(UI.passiveHys);
-    $('#active-hys').val(UI.activeHys);
-    if (schedules.currentScheduleName) {
-        $('#load-sched').val(schedules.currentScheduleName);
-        loadSchedule(schedules.currentScheduleName);
-    }
-}
-function handleInputChange(property, parseAsInt = false) {
-    return function() {
-        UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
-        if (property === 'holdType') updateHoldType();
-        hasUIChanged();
-    };
-}
-$('input[name="mode"]').change(handleInputChange('mode'));
-$('input[name="hold"]').change(handleInputChange('holdType'));
-$('#hold-time').change(handleInputChange('holdTime'));
-$('#setpoint').change(handleInputChange('setpoint', true));
-$('#passive-hys').change(handleInputChange('passiveHys', true));
-$('#active-hys').change(handleInputChange('activeHys', true));

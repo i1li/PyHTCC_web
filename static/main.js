@@ -56,6 +56,37 @@ function runTasksOnMinute() {
             console.error('Error in runTasksOnMinute:', error);
         });
 }
+function updateStatus() {
+    return new Promise((resolve, reject) => {
+        const now = Date.now();
+        const timeToWait = Math.max(0, 30000 - (now - lastUpdateTime));
+        setTimeout(() => {
+            lastUpdateTime = Date.now();
+            let timeoutId;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 50000);
+            });
+            const updatePromise = fetch('/read_thermostat')
+            .then(response => response.json())
+            .then(reading => Object.assign(thermostat, reading));
+            Promise.race([updatePromise, timeoutPromise])
+                .then(() => {
+                    clearTimeout(timeoutId);
+                    handleUpdates();
+                    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
+                    const timeNow = getTimeNow();
+                    if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
+                        switchHoldType('sched');
+                    }
+                    resolve();
+                })
+                .catch((error) => {
+                    clearTimeout(timeoutId);
+                    reject(error);
+                });
+        }, timeToWait);
+    });
+}
 function updateHoldType() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
@@ -89,7 +120,8 @@ function updateHoldType() {
                 populateTimeslotNav(sched.nextTimeslot);
             } else {
                 const { sched, givenTime } = initializeTimeslotIndex(hourLater);
-                populateTimeslotNav(sched.thisTimeslot, givenTime);                
+                populateTimeslotNav(sched.thisTimeslot, givenTime);
+                AC.holdTime = UI.holdTime;         
             }
             populated = true;
             lastHoldTime = UI.holdTime;

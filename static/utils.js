@@ -52,17 +52,6 @@ function switchHoldType(holdType) {
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
 
 }
-function handleExternalUpdate() {
-    populated = false;
-    externalUpdate = true;
-    switchHoldType('temp');
-    const hourLater = getHourLater();
-    AC.holdTime = hourLater;
-    AC.mode = thermostat.mode;
-    UI.mode = thermostat.mode;
-    AC.setpoint = thermostat.setpoint;
-    UI.setpoint = thermostat.setpoint;
-}
 function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');

@@ -1,5 +1,5 @@
 function initializeUI() {
-    maintainTiming();
+    IntervalManager.start();
     loadScheduleList();
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
@@ -26,21 +26,36 @@ $('#hold-time').change(handleInputChange('holdTime'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
-function handleUpdates() {
+function handleReadout() {
+    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
     if (firstReading) {
-        AC.mode = AC.mode || thermostat.mode;
-        lastMode = lastMode || thermostat.mode;
-        AC.setpoint = AC.setpoint || thermostat.setpoint;
-        lastSetpoint = lastSetpoint || thermostat.setpoint;
+        if (!AC.setpoint || !AC.mode) {
+            lastSetpoint = AC.setpoint = UI.setpoint = thermostat.setpoint;
+            lastMode = AC.mode = UI.mode = thermostat.mode;
+            pauseUpdatesUntilSave = false;
+        } else {
+            lastMode = UI.mode = thermostat.mode;
+            lastSetpoint = UI.setpoint = thermostat.setpoint;
+            pauseUpdatesUntilSave = true;
+        }
+        externalUpdate = false;
         firstReading = false;
-        pauseUpdatesUntilSave = false;
-    } else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) { externalUpdate = false;
-    } else if (thermostat.setpoint != lastSetpoint || thermostat.mode != lastMode) {
-        populated = false;
-        externalUpdate = true;
-        switchHoldType('temp');
-        AC.mode = UI.mode = thermostat.mode;
-        AC.setpoint = UI.setpoint = thermostat.setpoint;
+        return;
+    }
+    else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) { externalUpdate = false;
+    } else {
+        if (confirmed) {
+            populated = false;
+            externalUpdate = true;
+            switchHoldType('temp');
+            lastMode = AC.mode = UI.mode = thermostat.mode;
+            lastSetpoint = AC.setpoint = UI.setpoint = thermostat.setpoint;
+            pauseUpdatesUntilSave = false;
+            updateHoldType();
+        } else {
+            confirmed = true;
+            pauseUpdatesUntilSave = true;
+        }
     }
 }
 function loadState() {
@@ -52,7 +67,9 @@ function loadState() {
                 noState = true;
                 saveState();
                 return;
-            } else { noState = false; }
+            } else { noState = false;
+                pauseUpdatesUntilSave = true;
+             }
             Object.assign(AC, data.AC);
             Object.assign(V, data.V);
             Object.assign(schedules, data.schedules);
@@ -89,7 +106,7 @@ function saveState() {
 function hasStateChanged(currentState, lastState) {
     if (!lastState) return false;
     const _ = lastState;
-    if ((V.setpointToUse !== _.V.setpointToUse) && (JSON.stringify(currentState) !== JSON.stringify(lastState))) {
+    if (JSON.stringify(currentState) !== JSON.stringify(lastState)) {
     const sortedCurrent = sortObject(currentState);
     const sortedLast = sortObject(lastState);
     return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);

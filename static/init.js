@@ -13,6 +13,7 @@ let lastHoldTime = '';
 let currentTimeslotIndex = -1;
 let unsavedSchedule = false;
 let unsavedSettings = false;
+let confirmed = false;
 let settings = AC = {
     holdType: '',
     holdTime: '',

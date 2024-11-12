@@ -1,21 +1,3 @@
-function maintainTiming() {
-    let count = 0;
-    const now = new Date();
-    const delay = (60 - now.getSeconds()) * 1000;
-    setTimeout(function run() {
-        scheduledTasks();
-        count++;
-        if (count > 99) {
-            count = 0;
-            const drift = new Date().getSeconds();
-            if (drift > 9) {
-                setTimeout(run, (60 - drift) * 1000);
-                return;
-            }
-        }
-        setTimeout(run, 60000);
-    }, delay);
-}    
 function formatTime(hours, minutes) {
     return hours.toString().padStart(2, '0') + ':' + minutes.toString().padStart(2, '0');
 }
@@ -60,8 +42,13 @@ function switchHoldType(holdType) {
     AC.holdType = holdType;
     UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
-
 }
+// function handleHoldExpiry() {
+//     const timeNow = getTimeNow();
+//     if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
+//         switchHoldType('sched');
+//     }
+// }
 function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');

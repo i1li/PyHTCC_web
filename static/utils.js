@@ -50,16 +50,22 @@ function unsavedWarning() {
     if (unsavedSettings || unsavedSchedule) {
         warningElement.style.display = 'block';
         applyElement.style.border = 'red solid 3px';
-    } else {
+        pauseUpdatesUntilSave = true;
+    } else if (!unsavedSettings){
         warningElement.style.display = 'none';
         applyElement.style.border = 'none';
     }
-    if (!unsavedSettings && unsavedSchedule) {
+    if (unsavedSchedule) {
         warning2Element.style.display = 'block';
         saveScheduleElement.style.border = 'red solid 3px';
-    } else if (!unsavedSchedule) {
+        pauseUpdatesUntilSave = true;
+    }
+    if (!unsavedSchedule) {
         warning2Element.style.display = 'none';
         saveScheduleElement.style.border = 'none';
+    }
+    if (!unsavedSchedule && !unsavedSettings) {
+        pauseUpdatesUntilSave = false;
     }
 }
 function hasUIChanged() {

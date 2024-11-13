@@ -12,7 +12,7 @@ let currentTimeslotIndex = -1;
 let unsavedSchedule = false;
 let unsavedSettings = false;
 let externalUpdate = false;
-let unconfirmed = true;
+let unconfirmedUpdate = false;
 let settings = AC = {
     holdType: '',
     holdTime: '',

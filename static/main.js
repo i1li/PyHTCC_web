@@ -49,33 +49,34 @@ const IntervalManager = (function() {
             });
         })
         .then(() => {
-            return new Promise(resolve => {
-                updateHoldType();
-                resolve();
-            });
-        })
-        .then(() => {
             if (!pauseUpdatesUntilSave) {
                 return Promise.resolve()
-                    .then(() => {
-                        return new Promise(resolve => {
-                            V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
-                            resolve();
-                        });
-                    })
-                    .then(() => {
-                        return new Promise(resolve => {
-                            if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint) {
-                                setThermostat(V.adjustedSetpoint, AC.mode);
-                                unconfirmed = true;
-                                saveState();
-                            }
-                            resolve();
-                        });
+                .then(() => {
+                    return new Promise(resolve => {
+                        updateHoldType();
+                        resolve();
                     });
+                })
+                .then(() => {
+                    return new Promise(resolve => {
+                        V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
+                        resolve();
+                    });
+                })
+                .then(() => {
+                    return new Promise(resolve => {
+                        if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
+                            setThermostat(V.adjustedSetpoint, AC.mode);
+                            unconfirmedUpdate = true;
+                            saveState();
+                        }
+                        resolve();
+                    });
+                });
             }
         })
-        .catch(error => { console.error('Error in eventChain:', error); }); }
+        .catch(error => { console.error('Error in eventChain:', error); });
+    }    
     return {
         start: function() {
             eventChain(); 
@@ -94,17 +95,15 @@ const IntervalManager = (function() {
 function handleReadout() {
     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
     if (firstReading) {
+        firstReading = false;
         pauseUpdatesUntilSave = false;
         const firstReadout = hys(AC.setpoint, AC.mode)
-        firstReading = false;
         if (thermostat.setpoint != firstReadout || thermostat.mode != AC.mode) {
             unsavedSettings = true;
             unsavedWarning();
-            pauseUpdatesUntilSave = true;
         }
-    } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode) { unconfirmed = externalUpdate = false;
-    } else if (!unconfirmed && V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
-        pauseUpdatesUntilSave = true;
+    } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode) { unconfirmedUpdate = externalUpdate = false;
+    } else if (!unconfirmedUpdate && V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
         AC.mode = UI.mode = thermostat.mode;
         const externalAdjustedSetpoint = hys(thermostat.setpoint, thermostat.mode);
         const adjustmentDifference = thermostat.setpoint - externalAdjustedSetpoint;
@@ -148,6 +147,15 @@ function updateHoldType() {
             UI.holdType = 'perm';
         }
     }
+    if (AC.holdType === 'temp' && !externalUpdate && AC.holdTime && timeNow >= AC.holdTime) {
+        pauseUpdatesUntilSave = false;
+        switchHoldType('sched');
+    }
+    if (AC.holdType === 'sched') {
+        const sched = schedInfo();
+        AC.setpoint = sched.scheduledTemp;
+        AC.holdTime = sched.nextTimeslot.time;
+    }
     if (UI.holdType === 'sched') {
         $('#setpoint').prop('readonly', true);
         $('#temp-hold-info').hide();
@@ -187,22 +195,10 @@ function updateHoldType() {
         if (!pauseUpdatesUntilSave) { $('#setpoint').val(AC.setpoint);
         } else { $('#setpoint').val(UI.setpoint); }
     }
-    if (AC.holdType === 'sched') {
-        const sched = schedInfo();
-        AC.setpoint = sched.scheduledTemp;
-        AC.holdTime = sched.nextTimeslot.time;
-    } else if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
-        pauseUpdatesUntilSave = false;
-        switchHoldType('sched');
-        updateHoldType();
-    }
 }
 $('#apply').click(function() {
     Object.assign(AC, UI);
-    pauseUpdatesUntilSave = false;
-    unsavedSettings = false;
-    unsavedSchedule = false;
+    unsavedSchedule = unsavedSettings = false;
     unsavedWarning();
-    updateHoldType();
     IntervalManager.expedite();
 });

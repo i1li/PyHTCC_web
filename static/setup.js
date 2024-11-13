@@ -35,7 +35,7 @@ function loadState() {
                 saveState();
                 return;
             } else { noState = false;
-                pauseUpdatesUntilSave = true;
+                pauseUpdatesUntilSave = false;
              }
             Object.assign(AC, data.AC);
             Object.assign(V, data.V);
@@ -61,7 +61,6 @@ function saveState() {
                 if (noState) {
                     noState = false;
                     unsavedSettings = true;
-                    pauseUpdatesUntilSave = true;
                     unsavedWarning();
                 }
             } else { console.error('Failed sending app state'); }

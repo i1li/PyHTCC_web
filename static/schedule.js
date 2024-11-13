@@ -93,7 +93,7 @@ $('#save-sched').click(function() {
         pauseUpdatesUntilSave = false;
         unsavedSettings = false;
         unsavedSchedule = false;
-        unsavedChangesWarning();
+        unsavedWarning();
     }
 });
 function loadScheduleList() {
@@ -127,7 +127,7 @@ $('#load-sched').change(function() {
         pauseUpdatesUntilSave = true;
         unsavedSettings = true;
         unsavedSchedule = true;
-        unsavedChangesWarning();
+        unsavedWarning();
         loadSchedule(selectedSchedule);
     }
 });
@@ -148,10 +148,10 @@ $(document).on('click', '.remove-timeslot', function() {
 $('#clear-sched').click(function() {
     $('#schedule').empty();
 });
-$('#importSchedules').click(function() {
-    $('#importFile').click();
+$('#import-sched').click(function() {
+    $('#import-sched-file').click();
 });
-$('#importFile').change(function(event) {
+$('#import-sched-file').change(function(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
@@ -169,7 +169,7 @@ $('#importFile').change(function(event) {
         reader.readAsText(file);
     }
 });
-$('#exportSchedules').click(function() {
+$('#export-sched').click(function() {
     const blob = new Blob([JSON.stringify(schedules.schedules)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

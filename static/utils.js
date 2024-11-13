@@ -39,11 +39,10 @@ function isEqual(obj1, obj2, tolerance = 1e-10) {
     return true;
 }
 function switchHoldType(holdType) {
-    AC.holdType = holdType;
-    UI.holdType = holdType;
+    AC.holdType = UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
 }
-function unsavedChangesWarning() {
+function unsavedWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');
     const saveScheduleElement = document.getElementById('save-sched');
@@ -66,32 +65,20 @@ function unsavedChangesWarning() {
 function hasUIChanged() {
     const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
     unsavedSettings = changedProperties.length > 0;
-    unsavedChangesWarning();
+    unsavedWarning();
 }
 function hasScheduleChanged() {
-    const uiSchedule = schedInfoUI();
-    const acSchedule = schedInfo();
-    if (!uiSchedule || !acSchedule) return true;
-    if (!uiSchedule.timeslots || !acSchedule.timeslots) return true;
-    const sortedUITimeslots = sortObject(uiSchedule.timeslots);
-    const sortedACTimeslots = sortObject(acSchedule.timeslots);
-    const scheduleChanged = !isEqual(sortedUITimeslots, sortedACTimeslots);
+    const schedUI = schedInfoUI();
+    const sched = schedInfo();
+    if (!schedUI || !sched) return true;
+    if (!schedUI.timeslots || !sched.timeslots) return true;
+    const sortedTimeslotsUI = sortObject(schedUI.timeslots);
+    const sortedTimeslotsAC = sortObject(sched.timeslots);
+    const scheduleChanged = !isEqual(sortedTimeslotsUI, sortedTimeslotsAC);
     unsavedSchedule = scheduleChanged;
-    unsavedChangesWarning();
+    unsavedWarning();
     return scheduleChanged;
 }
-document.addEventListener('DOMContentLoaded', function() {
-    const scheduleDiv = document.getElementById('schedule');
-    scheduleDiv.addEventListener('input', debounce(function(event) {
-        hasScheduleChanged();
-    }, 1500));
-    scheduleDiv.addEventListener('change', function(event) {
-        hasScheduleChanged();
-    });
-    scheduleDiv.addEventListener('click', debounce(function(event) {
-        hasScheduleChanged();
-    }, 1500));
-});
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -103,7 +90,13 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
-const toTop = document.getElementById("toTop");
+document.addEventListener('DOMContentLoaded', function() {
+    const scheduleDiv = document.getElementById('schedule');
+    scheduleDiv.addEventListener('input change click', debounce(function(event) {
+        hasScheduleChanged();
+    }, 1500));    
+});
+const toTop = document.getElementById("to-top");
 function handleScroll() {
   if (document.body.scrollTop > 160 || document.documentElement.scrollTop > 160) {
     toTop.style.display = "block";
@@ -111,7 +104,7 @@ function handleScroll() {
     toTop.style.display = "none";
   }
 }
-window.addEventListener('scroll', handleScroll);
+window.addEventListener('scroll', debounce(handleScroll, 200));
 function topFunction() {
   window.scrollTo(0, 0);
 }

@@ -99,7 +99,7 @@ function handleReadout() {
         firstReading = false;
         if (thermostat.setpoint != firstReadout || thermostat.mode != AC.mode) {
             unsavedSettings = true;
-            unsavedChangesWarning();
+            unsavedWarning();
             pauseUpdatesUntilSave = true;
         }
     } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode) { unconfirmed = externalUpdate = false;
@@ -202,7 +202,7 @@ $('#apply').click(function() {
     pauseUpdatesUntilSave = false;
     unsavedSettings = false;
     unsavedSchedule = false;
-    unsavedChangesWarning();
+    unsavedWarning();
     updateHoldType();
     IntervalManager.expedite();
 });

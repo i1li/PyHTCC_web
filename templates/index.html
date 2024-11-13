@@ -7,7 +7,7 @@
 <!-- <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js" integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
 https://releases.jquery.com/jquery/ -->
 </head>
-<body><span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" id="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span>
+<body><span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="to-top-img" id="to-top" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span>
 <div class="mode-container"><div class="mode-option">
 <input type="radio" id="cool" name="mode" value="cool">
 <label for="cool">Cool</label>
@@ -51,15 +51,15 @@ https://releases.jquery.com/jquery/ -->
 <div class="sched-controls">
 <select id="load-sched">
 <option value="">Saved Schedules:</option></select>
-<button id="importSchedules">Import Schedules</button>
-<input type="file" id="importFile" style="display:none;" accept=".json">
-<button id="exportSchedules">Export Schedules</button>
+<button id="import-sched">Import Schedules</button>
+<input type="file" id="import-sched-file" style="display:none;" accept=".json">
+<button id="export-sched">Export Schedules</button>
 </div><div id="schedule"></div>
 <button id="add-timeslot">Add Timeslot</button>
 <button id="clear-sched">Clear Schedule</button>
 <button id="save-sched">Save Schedule</button>
 <center><div id="warning2">* * * You have unsaved changes * * *</div>
-<span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="toTop" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span></center>
+<span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="to-top-img" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span></center>
 <script src="{{ url_for('static', filename='init.js') }}"></script>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>
 <script src="{{ url_for('static', filename='schedule.js') }}"></script>

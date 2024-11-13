@@ -62,7 +62,7 @@ function saveState() {
                     noState = false;
                     unsavedSettings = true;
                     pauseUpdatesUntilSave = true;
-                    unsavedChangesWarning();
+                    unsavedWarning();
                 }
             } else { console.error('Failed sending app state'); }
         })

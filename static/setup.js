@@ -26,45 +26,12 @@ $('#hold-time').change(handleInputChange('holdTime'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
-function handleReadout() {
-    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
-    if (firstReading) {
-        if (!AC.setpoint || !AC.mode) {
-            lastSetpoint = AC.setpoint = UI.setpoint = thermostat.setpoint;
-            lastMode = AC.mode = UI.mode = thermostat.mode;
-            pauseUpdatesUntilSave = false;
-        } else {
-            lastMode = UI.mode = thermostat.mode;
-            lastSetpoint = UI.setpoint = thermostat.setpoint;
-            pauseUpdatesUntilSave = true;
-        }
-        externalUpdate = false;
-        firstReading = false;
-        return;
-    }
-    else if (thermostat.setpoint == lastSetpoint && thermostat.mode == lastMode) { externalUpdate = false;
-    } else {
-        if (confirmed) {
-            populated = false;
-            externalUpdate = true;
-            switchHoldType('temp');
-            lastMode = AC.mode = UI.mode = thermostat.mode;
-            lastSetpoint = AC.setpoint = UI.setpoint = thermostat.setpoint;
-            pauseUpdatesUntilSave = false;
-            updateHoldType();
-        } else {
-            confirmed = true;
-            pauseUpdatesUntilSave = true;
-        }
-    }
-}
 function loadState() {
     return fetch('/app_state')
         .then(response => response.json())
         .then(data => {
             if (Object.keys(data).length === 0) {
-                pauseUpdatesUntilSave = true;
-                noState = true;
+                noState = pauseUpdatesUntilSave = true;
                 saveState();
                 return;
             } else { noState = false;

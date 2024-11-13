@@ -43,12 +43,6 @@ function switchHoldType(holdType) {
     UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
 }
-// function handleHoldExpiry() {
-//     const timeNow = getTimeNow();
-//     if (AC.holdType === 'temp' && AC.holdTime && timeNow >= AC.holdTime) {
-//         switchHoldType('sched');
-//     }
-// }
 function unsavedChangesWarning() {
     const warningElement = document.getElementById('warning');
     const applyElement = document.getElementById('apply');

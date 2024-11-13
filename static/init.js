@@ -5,15 +5,14 @@ let lastState = null;
 let noUI = false;
 let UI = {};
 let lastMode = '';
-let lastSetpoint = 0;
 let lastUpdateTime = 0;
-let externalUpdate = false;
 let populated = false;
 let lastHoldTime = '';
 let currentTimeslotIndex = -1;
 let unsavedSchedule = false;
 let unsavedSettings = false;
-let confirmed = false;
+let externalUpdate = false;
+let unconfirmed = true;
 let settings = AC = {
     holdType: '',
     holdTime: '',
@@ -38,7 +37,7 @@ Object.entries(advancedSettings).forEach(([key, value]) => {
 let variables = V = {
     activeSetpoint: 0,
     restSetpoint: 0,
-    setpointToUse: 0,
+    adjustedSetpoint: 0,
     shouldRest: false,
     shouldQuickRest: false,
     resting: false,

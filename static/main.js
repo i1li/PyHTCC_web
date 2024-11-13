@@ -16,35 +16,35 @@ const IntervalManager = (function() {
     let nextEventTime = 0;
     let timeoutId = null;
     let expediteRequested = false;
-    function schedule() {
+    function intervalSchedule() {
         const now = Date.now();
-        const timeSinceLastRefresh = now - lastEventTime;
+        const timeSinceLastEvent = now - lastEventTime;
         const timeToNextMinute = 60000 - (now % 60000);
-        let delay;
+        let timeBetweenEvents;
         if (expediteRequested) {
-            delay = Math.max(30000 - timeSinceLastRefresh, 0);
+            timeBetweenEvents = Math.max(30000 - timeSinceLastEvent, 0);
         } else if (timeToNextMinute >= 50000) {
-            delay = timeToNextMinute;
+            timeBetweenEvents = timeToNextMinute;
         } else {
-            delay = Math.max(50000 - timeSinceLastRefresh, 0);
+            timeBetweenEvents = Math.max(50000 - timeSinceLastEvent, 0);
         }
-        nextEventTime = now + delay;
+        nextEventTime = now + timeBetweenEvents;
         clearTimeout(timeoutId);
-        timeoutId = setTimeout(processRefresh, delay);
+        timeoutId = setTimeout(processEvent, timeBetweenEvents);
     }
-    function processRefresh() {
+    function processEvent() {
         const now = Date.now();
-        dataRefresh();
+        eventChain();
         lastEventTime = now;
         expediteRequested = false;
-        schedule();
+        intervalSchedule();
     }
-    function dataRefresh() {
-        console.log(`Refreshing data at ${new Date().toLocaleTimeString()}`);
+    function eventChain() {
+        console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
         Promise.resolve()
         .then(() => {
             return new Promise(resolve => {
-                updateStatus();
+                readThermostat();
                 resolve();
             });
         })
@@ -59,36 +59,64 @@ const IntervalManager = (function() {
                 return Promise.resolve()
                     .then(() => {
                         return new Promise(resolve => {
-                            hys(AC.setpoint, AC.mode);
+                            V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
                             resolve();
                         });
                     })
                     .then(() => {
                         return new Promise(resolve => {
-                            setThermostat(V.setpointToUse, AC.mode);
-                            saveState();
+                            if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint) {
+                                setThermostat(V.adjustedSetpoint, AC.mode);
+                                unconfirmed = true;
+                                saveState();
+                            }
                             resolve();
                         });
                     });
             }
         })
-        .catch(error => { console.error('Error in dataRefresh:', error); });    }
+        .catch(error => { console.error('Error in eventChain:', error); }); }
     return {
         start: function() {
-            dataRefresh(); 
+            eventChain(); 
             lastEventTime = Date.now();
-            schedule();
+            intervalSchedule();
         },
         expedite: function() {
             if (!expediteRequested) {
                 expediteRequested = true;
                 clearTimeout(timeoutId);
-                schedule();
+                intervalSchedule();
             }
         }
     };
 })();
-function updateStatus() {
+function handleReadout() {
+    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
+    if (firstReading) {
+        pauseUpdatesUntilSave = false;
+        const firstReadout = hys(AC.setpoint, AC.mode)
+        firstReading = false;
+        if (thermostat.setpoint != firstReadout || thermostat.mode != AC.mode) {
+            unsavedSettings = true;
+            unsavedChangesWarning();
+            pauseUpdatesUntilSave = true;
+        }
+    } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode) { unconfirmed = externalUpdate = false;
+    } else if (!unconfirmed && V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
+        pauseUpdatesUntilSave = true;
+        AC.mode = UI.mode = thermostat.mode;
+        const externalAdjustedSetpoint = hys(thermostat.setpoint, thermostat.mode);
+        const adjustmentDifference = thermostat.setpoint - externalAdjustedSetpoint;
+        const reverseAdjustment = externalAdjustedSetpoint + adjustmentDifference;
+        AC.setpoint = UI.setpoint = reverseAdjustment;
+        externalUpdate = true;
+        pauseUpdatesUntilSave = false;
+        populated = false;
+        switchHoldType('temp');
+    }
+}
+function readThermostat() {
     return new Promise((resolve, reject) => {
         let timeoutId;
         const timeoutPromise = new Promise((_, reject) => {
@@ -129,21 +157,17 @@ function updateHoldType() {
         $('#setpoint').val(UI.setpoint);
         UI.holdTime = sched.nextTimeslot.time;
     } else if (UI.holdType === 'temp') {
-        $('#setpoint').prop('readonly', false);
-        $('#temp-hold-info').show();
         const sched = schedInfoUI();
         if (!populated || lastHoldTime !== UI.holdTime) {
-            if (!externalUpdate && !confirmed) {
+            if (!externalUpdate) {
                 populateTimeslotNav(sched.nextTimeslot);
-            } else {
+            } else if (externalUpdate) {
                 const { sched, givenTime } = initializeTimeslotIndex(hourLater);
                 populateTimeslotNav(sched.thisTimeslot, givenTime);
                 AC.holdTime = UI.holdTime;
                 externalUpdate = false;
-                confirmed = false;         
+                V.resting = false; 
             }
-            populated = true;
-            lastHoldTime = UI.holdTime;
         }
         if (!pauseUpdatesUntilSave) {
             $('#setpoint').val(AC.setpoint);
@@ -153,6 +177,9 @@ function updateHoldType() {
             $('#hold-time').val(UI.holdTime);
         }
         lastHoldTime = UI.holdTime;
+        populated = true;
+        $('#setpoint').prop('readonly', false);
+        $('#temp-hold-info').show();
     } else if (UI.holdType === 'perm') {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();

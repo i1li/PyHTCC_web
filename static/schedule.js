@@ -118,7 +118,7 @@ function loadSchedule(scheduleName) {
             console.error('Invalid schedule format');
         }
         $('#load-sched').val(scheduleName);
-        updateHoldType();
+        handleHoldType();
     }
 }
 $('#load-sched').change(function() {

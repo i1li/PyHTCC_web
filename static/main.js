@@ -1,13 +1,11 @@
 if (noUI) {
     loadState()
-        .then(() => {
-        return IntervalManager.start(); })
+        .then(() => { return IntervalManager.start(); })
         .catch(error => console.error('Error in noUI flow:', error));
 } else {
     $(document).ready(function() {
         loadState()
-            .then(() => {
-            return initializeUI(); })
+            .then(() => { return initializeUI(); })
             .catch(error => console.error('Error in UI flow:', error));
     });
 }
@@ -39,44 +37,32 @@ const IntervalManager = (function() {
         expediteRequested = false;
         intervalSchedule();
     }
-    function eventChain() {
+    async function eventChain() {
         console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
-        Promise.resolve()
-        .then(() => {
-            return new Promise(resolve => {
-                readThermostat();
-                resolve();
-            });
-        })
-        .then(() => {
+        try {
+            await readThermostat();
             if (!pauseUpdatesUntilSave) {
-                return Promise.resolve()
-                .then(() => {
-                    return new Promise(resolve => {
-                        updateHoldType();
-                        resolve();
-                    });
-                })
-                .then(() => {
-                    return new Promise(resolve => {
-                        V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
-                        resolve();
-                    });
-                })
-                .then(() => {
-                    return new Promise(resolve => {
-                        if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
-                            setThermostat(V.adjustedSetpoint, AC.mode);
-                            unconfirmedUpdate = true;
-                            saveState();
-                        }
-                        resolve();
-                    });
+                await new Promise(resolve => {
+                    handleHoldType();
+                    resolve();
+                });
+                await new Promise(resolve => {
+                    V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
+                    resolve();
+                });
+                await new Promise(resolve => {
+                    if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
+                        setThermostat(V.adjustedSetpoint, AC.mode);
+                        unconfirmedUpdate = true;
+                        saveState();
+                    }
+                    resolve();
                 });
             }
-        })
-        .catch(error => { console.error('Error in eventChain:', error); });
-    }    
+        } catch (error) {
+            console.error('Error in eventChain:', error);
+        }
+    }
     return {
         start: function() {
             eventChain(); 
@@ -136,7 +122,7 @@ function readThermostat() {
             });
     });
 }
-function updateHoldType() {
+function handleHoldType() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
     const hasSchedule = $('.timeslot').length > 0;
@@ -147,9 +133,16 @@ function updateHoldType() {
             UI.holdType = 'perm';
         }
     }
-    if (AC.holdType === 'temp' && !externalUpdate && AC.holdTime && timeNow >= AC.holdTime) {
-        pauseUpdatesUntilSave = false;
-        switchHoldType('sched');
+    if (AC.holdType === 'temp' && !externalUpdate && AC.holdTime) {
+        if (AC.holdTime === '00:00') {
+            if (timeNow === '00:00') {
+                pauseUpdatesUntilSave = false;
+                switchHoldType('sched');
+            }
+        } else if (timeNow >= AC.holdTime) {
+            pauseUpdatesUntilSave = false;
+            switchHoldType('sched');
+        }
     }
     if (AC.holdType === 'sched') {
         const sched = schedInfo();
@@ -177,13 +170,8 @@ function updateHoldType() {
                 V.resting = false; 
             }
         }
-        if (!pauseUpdatesUntilSave) {
-            $('#setpoint').val(AC.setpoint);
-            $('#hold-time').val(AC.holdTime);
-        } else {
-            $('#setpoint').val(UI.setpoint);
-            $('#hold-time').val(UI.holdTime);
-        }
+        $('#setpoint').val(UI.setpoint);
+        $('#hold-time').val(UI.holdTime);
         lastHoldTime = UI.holdTime;
         populated = true;
         $('#setpoint').prop('readonly', false);
@@ -192,13 +180,13 @@ function updateHoldType() {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();
         populated = false;
-        if (!pauseUpdatesUntilSave) { $('#setpoint').val(AC.setpoint);
-        } else { $('#setpoint').val(UI.setpoint); }
+        $('#setpoint').val(UI.setpoint);
     }
 }
 $('#apply').click(function() {
     Object.assign(AC, UI);
     unsavedSchedule = unsavedSettings = false;
     unsavedWarning();
+    handleHoldType();
     IntervalManager.expedite();
 });

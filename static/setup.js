@@ -16,7 +16,7 @@ function initializeUI() {
 function handleInputChange(property, parseAsInt = false) {
     return function() {
         UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
-        if (property === 'holdType') updateHoldType();
+        if (property === 'holdType') handleHoldType();
         hasUIChanged();
     };
 }

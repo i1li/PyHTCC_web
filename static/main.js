@@ -170,9 +170,9 @@ function handleHoldType() {
                 V.resting = false; 
             }
         }
-        $('#setpoint').val(UI.setpoint);
-        $('#hold-time').val(UI.holdTime);
-        lastHoldTime = UI.holdTime;
+        $('#setpoint').val(AC.setpoint);
+        $('#hold-time').val(AC.holdTime);
+        lastHoldTime = AC.holdTime;
         populated = true;
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').show();
@@ -180,7 +180,7 @@ function handleHoldType() {
         $('#setpoint').prop('readonly', false);
         $('#temp-hold-info').hide();
         populated = false;
-        $('#setpoint').val(UI.setpoint);
+        $('#setpoint').val(AC.setpoint);
     }
 }
 $('#apply').click(function() {

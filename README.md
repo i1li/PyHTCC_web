@@ -20,7 +20,7 @@ pip install -r requirements.txt
 py serv.py
 ```
 
-With the Flask server running, open a browser window to `localhost:5001`. To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory. (An update now automatically loads these from `default-app-state.json`).
+With the Flask server running, open a browser window to `localhost:5000` (replace 5000 with your custom port, if set). To load sample schedules click `Import Schedules` and select the `sample-schedules.json` file in project directory. (Update: now automatically loaded from `default-app-state.json`).
 
 When you open the app in a browser, it sends the state back to the Flask server for persistence. Once you have saved your settings and schedule, you can run the app in a way that does not require a browser window:
 

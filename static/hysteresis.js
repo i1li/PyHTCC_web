@@ -17,7 +17,7 @@ function hys(rawSetpoint, mode) {
         if (!V.runningSince && V.runningFor < AC.runMaxTime) {
             V.runningSince = now;
         } else if (V.runningFor >= AC.runMaxTime) {
-            V.shouldQuickRest = true;
+            V.quickResting = true;
         }
         if (isAtActiveSetpoint) {
             if (!V.runningAtEdgeSince) {
@@ -40,16 +40,6 @@ function hys(rawSetpoint, mode) {
                     if (!V.restingSince) {
                         V.restingSince = now;
                     } 
-                    if (!V.restingAtEdgeSince) {
-                        V.restingAtEdgeSince = now;
-                    }
-                } else if (V.shouldQuickRest) {
-                    V.quickResting = true;
-                    if (!V.restingSince && V.restingFor < AC.quickRestMaxTime) {
-                        V.restingSince = now;
-                    } else if (V.restingFor >= AC.quickRestMaxTime) {
-                        V.resting = false;
-                    }
                 } 
             } else if (!isAtActiveSetpoint) { 
                 V.shouldRest = false;
@@ -65,12 +55,17 @@ function hys(rawSetpoint, mode) {
             if (V.restingFor >= AC.restMaxTime) {
                 V.resting = false;
             }
+            if (V.quickResting) {
+                if (!V.restingSince && V.restingFor < AC.quickRestMaxTime) {
+                    V.restingSince = now;
+                } else if (V.restingFor >= AC.quickRestMaxTime) {
+                    V.quickResting = false;
+                }
+            }
         } else if (!isInRestRange) { 
             V.resting = false;
         }
     }
-    return V.resting ? V.restSetpoint : V.activeSetpoint;
-}
-function setThermostat(setpoint, mode) {
-    fetch('/set_thermostat', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
+    adjustedSetpoint = V.resting || V.quickResting ? V.restSetpoint : V.activeSetpoint;
+    return adjustedSetpoint;
 }

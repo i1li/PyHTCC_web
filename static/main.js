@@ -9,75 +9,32 @@ if (noUI) {
             .catch(error => console.error('Error in UI flow:', error));
     });
 }
-const IntervalManager = (function() {
-    let lastEventTime = 0;
-    let nextEventTime = 0;
-    let timeoutId = null;
-    let expediteRequested = false;
-    function intervalSchedule() {
-        const now = Date.now();
-        const timeSinceLastEvent = now - lastEventTime;
-        const timeToNextMinute = 60000 - (now % 60000);
-        let timeBetweenEvents;
-        if (expediteRequested) {
-            timeBetweenEvents = Math.max(30000 - timeSinceLastEvent, 0);
-        } else if (timeToNextMinute >= 50000) {
-            timeBetweenEvents = timeToNextMinute;
-        } else {
-            timeBetweenEvents = Math.max(50000 - timeSinceLastEvent, 0);
+async function eventChain() {
+    console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
+    try {
+        await readThermostat();
+        if (!pauseUpdatesUntilSave) {
+            await new Promise(resolve => {
+                handleHoldType();
+                resolve();
+            });
+            await new Promise(resolve => {
+                V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
+                resolve();
+            });
+            await new Promise(resolve => {
+                if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
+                    setThermostat(V.adjustedSetpoint, AC.mode);
+                    unconfirmedUpdate = true;
+                    saveState();
+                }
+                resolve();
+            });
         }
-        nextEventTime = now + timeBetweenEvents;
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(processEvent, timeBetweenEvents);
+    } catch (error) {
+        console.error('Error in eventChain:', error);
     }
-    function processEvent() {
-        const now = Date.now();
-        eventChain();
-        lastEventTime = now;
-        expediteRequested = false;
-        intervalSchedule();
-    }
-    async function eventChain() {
-        console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
-        try {
-            await readThermostat();
-            if (!pauseUpdatesUntilSave) {
-                await new Promise(resolve => {
-                    handleHoldType();
-                    resolve();
-                });
-                await new Promise(resolve => {
-                    V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
-                    resolve();
-                });
-                await new Promise(resolve => {
-                    if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
-                        setThermostat(V.adjustedSetpoint, AC.mode);
-                        unconfirmedUpdate = true;
-                        saveState();
-                    }
-                    resolve();
-                });
-            }
-        } catch (error) {
-            console.error('Error in eventChain:', error);
-        }
-    }
-    return {
-        start: function() {
-            eventChain(); 
-            lastEventTime = Date.now();
-            intervalSchedule();
-        },
-        expedite: function() {
-            if (!expediteRequested) {
-                expediteRequested = true;
-                clearTimeout(timeoutId);
-                intervalSchedule();
-            }
-        }
-    };
-})();
+}
 function handleReadout() {
     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
     if (firstReading) {
@@ -96,31 +53,9 @@ function handleReadout() {
         const reverseAdjustment = externalAdjustedSetpoint + adjustmentDifference;
         AC.setpoint = UI.setpoint = reverseAdjustment;
         externalUpdate = true;
-        pauseUpdatesUntilSave = false;
-        populated = false;
+        populated = pauseUpdatesUntilSave = false;
         switchHoldType('temp');
     }
-}
-function readThermostat() {
-    return new Promise((resolve, reject) => {
-        let timeoutId;
-        const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 30000);
-        });
-        const updatePromise = fetch('/read_thermostat')
-        .then(response => response.json())
-        .then(reading => Object.assign(thermostat, reading));
-        Promise.race([updatePromise, timeoutPromise])
-            .then(() => {
-                clearTimeout(timeoutId);
-                handleReadout();                
-                resolve();
-            })
-            .catch((error) => {
-                clearTimeout(timeoutId);
-                reject(error);
-            });
-    });
 }
 function handleHoldType() {
     const timeNow = getTimeNow();
@@ -155,7 +90,7 @@ function handleHoldType() {
         populated = false;
         const sched = schedInfoUI();
         UI.setpoint = sched.scheduledTemp;
-        $('#setpoint').val(UI.setpoint);
+        $('#setpoint').val(AC.setpoint);
         UI.holdTime = sched.nextTimeslot.time;
     } else if (UI.holdType === 'temp') {
         const sched = schedInfoUI();
@@ -166,8 +101,7 @@ function handleHoldType() {
                 const { sched, givenTime } = initializeTimeslotIndex(hourLater);
                 populateTimeslotNav(sched.thisTimeslot, givenTime);
                 AC.holdTime = UI.holdTime;
-                externalUpdate = false;
-                V.resting = false; 
+                externalUpdate = V.resting = false;
             }
         }
         $('#setpoint').val(AC.setpoint);
@@ -187,6 +121,5 @@ $('#apply').click(function() {
     Object.assign(AC, UI);
     unsavedSchedule = unsavedSettings = false;
     unsavedWarning();
-    handleHoldType();
-    IntervalManager.expedite();
+    IntervalManager.hurry();
 });

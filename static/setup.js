@@ -78,3 +78,81 @@ function hasStateChanged(currentState, lastState) {
     return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);
     } else return false;
 }
+function readThermostat() {
+    return new Promise((resolve, reject) => {
+        let thermostatTimeoutId;
+        const timeoutPromise = new Promise((_, reject) => {
+            thermostatTimeoutId = setTimeout(() => reject(new Error('Operation timed out')), 30000);
+        });
+        const updatePromise = fetch('/read_thermostat')
+        .then(response => response.json())
+        .then(reading => Object.assign(thermostat, reading));
+        Promise.race([updatePromise, timeoutPromise])
+            .then(() => {
+                clearTimeout(thermostatTimeoutId);
+                handleReadout();                
+                resolve();
+            })
+            .catch((error) => {
+                clearTimeout(thermostatTimeoutId);
+                reject(error);
+            });
+    });
+}
+function setThermostat(setpoint, mode) {
+    fetch('/set_thermostat', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ mode, setpoint }).toString() });
+}
+const IntervalManager = (function() {
+    let lastEventTime = 0;
+    let nextEventTime = 0;
+    let intervalManagerTimeoutId = null;
+    let hurryRequested = false;
+    let repeatHurryRequests = 0;
+    let lastHurryTime = 0;
+    const defaultMinInterval = 50000;
+    function scheduleInterval() {
+        const now = Date.now();
+        const timeSinceLastEvent = now - lastEventTime;
+        const maxInterval = timeToMinuteStart = 60000 - (now % 60000);
+        let interval;
+        if (hurryRequested) {
+            const hurryMinInterval = 15000;
+            const hurryInterval = hurryMinInterval * Math.pow(2, repeatHurryRequests);
+            interval = Math.max(hurryInterval - timeSinceLastEvent, 0);
+        } else if (maxInterval >= defaultMinInterval) {
+            interval = maxInterval;
+        } else {
+            interval = defaultMinInterval;
+        }
+        nextEventTime = now + interval;
+        clearTimeout(intervalManagerTimeoutId);
+        intervalManagerTimeoutId = setTimeout(processEvent, interval);
+    }
+    function processEvent() {
+        const now = Date.now();
+        eventChain();
+        lastEventTime = now;
+        hurryRequested = false;
+        repeatHurryRequests = 0;
+        scheduleInterval();
+    }
+    return {
+        start: function() {
+            processEvent();
+        },
+        hurry: function() {
+            const now = Date.now();
+            if (!hurryRequested) {
+                hurryRequested = true;
+                if (now - lastHurryTime < defaultMinInterval) { 
+                    repeatHurryRequests = Math.min(repeatHurryRequests + 1, 2); 
+                } else {
+                    repeatHurryRequests = 0;
+                }
+                lastHurryTime = now;
+                clearTimeout(intervalManagerTimeoutId);
+                scheduleInterval();
+            }
+        }
+    };
+})();

@@ -39,7 +39,6 @@ let variables = V = {
     restSetpoint: 0,
     adjustedSetpoint: 0,
     shouldRest: false,
-    shouldQuickRest: false,
     resting: false,
     quickResting: false,
     restingSince: 0,

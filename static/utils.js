@@ -50,21 +50,12 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+function topFunction() {
+  window.scrollTo(0, 0);
+}
 function switchHoldType(holdType) {
     AC.holdType = UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
-}
-function hasScheduleChanged() {
-    const schedUI = schedInfoUI();
-    const sched = schedInfo();
-    if (!schedUI || !sched) return true;
-    if (!schedUI.timeslots || !sched.timeslots) return true;
-    const sortedTimeslotsUI = sortObject(schedUI.timeslots);
-    const sortedTimeslotsAC = sortObject(sched.timeslots);
-    const scheduleChanged = !isEqual(sortedTimeslotsUI, sortedTimeslotsAC);
-    unsavedSchedule = scheduleChanged;
-    unsavedWarning();
-    return scheduleChanged;
 }
 $(document).ready(function() {
     $('#schedule').on('input change click', debounce(function(event) {
@@ -78,8 +69,22 @@ $(window).scroll(debounce(function() {
     }
 }, 200));
 });
-function topFunction() {
-  window.scrollTo(0, 0);
+function hasScheduleChanged() {
+    const schedUI = schedInfoUI();
+    const sched = schedInfo();
+    if (!schedUI || !sched) return true;
+    if (!schedUI.timeslots || !sched.timeslots) return true;
+    const sortedTimeslotsUI = sortObject(schedUI.timeslots);
+    const sortedTimeslotsAC = sortObject(sched.timeslots);
+    const scheduleChanged = !isEqual(sortedTimeslotsUI, sortedTimeslotsAC);
+    unsavedSchedule = scheduleChanged;
+    unsavedWarning();
+    return scheduleChanged;
+}
+function hasUIChanged() {
+    const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
+    unsavedSettings = changedProperties.length > 0;
+    unsavedWarning();
 }
 function unsavedWarning() {
     if (unsavedSettings || unsavedSchedule) {
@@ -116,11 +121,6 @@ $('#hold-time').change(handleInputChange('holdTime'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
-function hasUIChanged() {
-    const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
-    unsavedSettings = changedProperties.length > 0;
-    unsavedWarning();
-}
 async function initialize() {
     await loadState();
     loadScheduleList();

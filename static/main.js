@@ -33,12 +33,12 @@ function handleReading() {
             unsavedSettings = true;
             unsavedWarning();
         }
-    } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode) { unconfirmedUpdate = externalUpdate = false;
+    } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode && unconfirmedUpdate) { unconfirmedUpdate = externalUpdate = false;
     } else if (!unconfirmedUpdate && V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
         AC.mode = UI.mode = thermostat.mode;
         const externalAdjustedSetpoint = hys(thermostat.setpoint, thermostat.mode);
-        const adjustmentDifference = thermostat.setpoint - externalAdjustedSetpoint;
-        const reverseAdjustment = externalAdjustedSetpoint + adjustmentDifference;
+        const adjustmentDifference = externalAdjustedSetpoint - thermostat.setpoint;
+        const reverseAdjustment = externalAdjustedSetpoint - adjustmentDifference;
         AC.setpoint = UI.setpoint = reverseAdjustment;
         externalUpdate = true;
         populated = pauseUntilSave = false;

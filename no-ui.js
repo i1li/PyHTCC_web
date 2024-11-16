@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM, ResourceLoader } = require('jsdom');
 const http = require('http');
-let noUI = true;
 class CustomResourceLoader extends ResourceLoader {
     fetch(url, options) {
         const filePath = url.startsWith('file:') 
@@ -85,7 +84,6 @@ const dom = new JSDOM(indexHtml, {
 });
 global.window = dom.window;
 global.document = dom.window.document;
-global.window.noUI = true;
 global.navigator = dom.window.navigator;
 global.fetch = customFetch;
 global.console = {

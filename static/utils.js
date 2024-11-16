@@ -6,8 +6,9 @@ function getTimeNow() {
     return formatTime(now.getHours(), now.getMinutes());
 }
 function getHourLater() {
-    const oneHourLater = new Date(Date.now() + 60 * 60 * 1000);
-    return formatTime(oneHourLater.getHours(), oneHourLater.getMinutes());
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return formatTime(now.getHours(), now.getMinutes());
 }
 function sortObject(obj) {
     if (typeof obj !== 'object' || obj === null) {
@@ -120,8 +121,8 @@ function hasUIChanged() {
     unsavedSettings = changedProperties.length > 0;
     unsavedWarning();
 }
-function initializeUI() {
-    IntervalManager.start();
+async function initialize() {
+    await loadState();
     loadScheduleList();
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
@@ -134,6 +135,7 @@ function initializeUI() {
         $('#load-sched').val(schedules.currentScheduleName);
         loadSchedule(schedules.currentScheduleName);
     }
+    IntervalManager.start();
 }
 function loadState() {
     return fetch('/app_state')
@@ -143,16 +145,23 @@ function loadState() {
                 noState = pauseUntilSave = true;
                 saveState();
                 return;
-            } else { noState = false;
-                pauseUntilSave = false;
+            } else { noState = pauseUntilSave = false;
              }
             Object.assign(AC, data.AC);
             Object.assign(V, data.V);
             Object.assign(schedules, data.schedules);
             lastState = JSON.parse(JSON.stringify(data)); 
-            console.log('App state loaded');
+            console.log('State loaded');
         })
-        .catch(error => console.error('Error getting app state:', error));
+        .catch(error => console.error('Error loading state:', error));
+}
+function hasStateChanged(currentState, lastState) {
+    if (!lastState) return false;
+    if (JSON.stringify(currentState) !== JSON.stringify(lastState)) {
+    const sortedCurrent = sortObject(currentState);
+    const sortedLast = sortObject(lastState);
+    return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);
+    } else return false;
 }
 function saveState() {
     const currentState = {
@@ -165,33 +174,24 @@ function saveState() {
         return fetch('/app_state', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(currentState) })
         .then(response => response.json())
         .then(result => {
-            if (result.success) { console.log('App state sent');
+            if (result.success) { console.log('State saved');
                 lastState = JSON.parse(JSON.stringify(currentState));
                 if (noState) {
                     noState = false;
                     unsavedSettings = true;
                     unsavedWarning();
                 }
-            } else { console.error('Failed sending app state'); }
+            } else { console.error('Failed saving state'); }
         })
-        .catch(error => console.error('Error sending app state:', error));
-    } else { console.log('App state unchanged.', JSON.stringify(thermostat, null, 2));
+        .catch(error => console.error('Error saving state:', error));
+    } else { console.log('State unchanged.', JSON.stringify(thermostat, null, 2));
         return Promise.resolve(); } 
-}
-function hasStateChanged(currentState, lastState) {
-    if (!lastState) return false;
-    const _ = lastState;
-    if (JSON.stringify(currentState) !== JSON.stringify(lastState)) {
-    const sortedCurrent = sortObject(currentState);
-    const sortedLast = sortObject(lastState);
-    return !isEqual(sortedCurrent.AC, sortedLast.AC) || !isEqual(sortedCurrent.schedules, sortedLast.schedules);
-    } else return false;
 }
 function readThermostat() {
     return new Promise((resolve, reject) => {
         let timeoutId;
         const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('Operation timed out')), 30000);
+            timeoutId = setTimeout(() => reject(new Error('readThermostat timed out')), 30000);
         });
         const updatePromise = fetch('/read_thermostat')
         .then(response => response.json())
@@ -199,7 +199,7 @@ function readThermostat() {
         Promise.race([updatePromise, timeoutPromise])
             .then(() => {
                 clearTimeout(timeoutId);
-                handleReadout();                
+                handleReading();                
                 resolve();
             })
             .catch((error) => {

@@ -2,7 +2,6 @@ let firstReading = true;
 let pauseUntilSave = true;
 let noState = true;
 let lastState = null;
-let noUI = false;
 let UI = {};
 let populated = false;
 let lastHoldTime = '';

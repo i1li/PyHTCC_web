@@ -1,6 +1,5 @@
 const IntervalManager = (function() {
     let lastEventTime = 0;
-    let nextEventTime = 0;
     let timeoutId = null;
     let hurryRequested = false;
     let repeatHurryRequests = 0;
@@ -20,13 +19,12 @@ const IntervalManager = (function() {
         } else {
             interval = defaultMinInterval;
         }
-        nextEventTime = now + interval;
         clearTimeout(timeoutId);
         timeoutId = setTimeout(processEvent, interval);
     }
     function processEvent() {
         const now = Date.now();
-        eventChain();
+        updateCycle();
         lastEventTime = now;
         hurryRequested = false;
         repeatHurryRequests = 0;

@@ -1,42 +1,30 @@
-if (noUI) {
-    loadState()
-        .then(() => { return IntervalManager.start(); })
-        .catch(error => console.error('Error in noUI flow:', error));
-} else {
-    $(document).ready(function() {
-        loadState()
-            .then(() => { return initializeUI(); })
-            .catch(error => console.error('Error in UI flow:', error));
-    });
-}
-async function eventChain() {
-    console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
+$(document).ready(async function() {
+    try {
+        await initialize();
+        console.log("Initialization complete");
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
+});
+async function updateCycle() {
+    console.log(`Processing updateCycle at ${new Date().toLocaleTimeString()}`);
     try {
         await readThermostat();
         if (!pauseUntilSave) {
-            await new Promise(resolve => {
-                handleHoldType();
-                resolve();
-            });
-            await new Promise(resolve => {
-                V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
-                resolve();
-            });
-            await new Promise(resolve => {
-                if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
-                    setThermostat(V.adjustedSetpoint, AC.mode);
-                    unconfirmedUpdate = true;
-                    saveState();
-                }
-                resolve();
-            });
+            handleHoldType();
+            V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
+            if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
+                setThermostat(V.adjustedSetpoint, AC.mode);
+                unconfirmedUpdate = true;
+                saveState();
+            }
         }
     } catch (error) {
-        console.error('Error in eventChain:', error);
+        console.error('Error in updateCycle:', error);
     }
 }
-function handleReadout() {
-    document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
+function handleReading() {
+    $('#current-temp').text(`Current Temp: ${thermostat.temp}`);
     if (firstReading) {
         firstReading = false;
         pauseUntilSave = false;

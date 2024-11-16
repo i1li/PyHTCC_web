@@ -13,7 +13,7 @@ async function eventChain() {
     console.log(`Processing eventChain at ${new Date().toLocaleTimeString()}`);
     try {
         await readThermostat();
-        if (!pauseUpdatesUntilSave) {
+        if (!pauseUntilSave) {
             await new Promise(resolve => {
                 handleHoldType();
                 resolve();
@@ -39,7 +39,7 @@ function handleReadout() {
     document.getElementById('current-temp').textContent = `Current Temp: ` + thermostat.temp;
     if (firstReading) {
         firstReading = false;
-        pauseUpdatesUntilSave = false;
+        pauseUntilSave = false;
         const firstReadout = hys(AC.setpoint, AC.mode)
         if (thermostat.setpoint != firstReadout || thermostat.mode != AC.mode) {
             unsavedSettings = true;
@@ -53,7 +53,7 @@ function handleReadout() {
         const reverseAdjustment = externalAdjustedSetpoint + adjustmentDifference;
         AC.setpoint = UI.setpoint = reverseAdjustment;
         externalUpdate = true;
-        populated = pauseUpdatesUntilSave = false;
+        populated = pauseUntilSave = false;
         switchHoldType('temp');
     }
 }
@@ -71,11 +71,11 @@ function handleHoldType() {
     if (AC.holdType === 'temp' && !externalUpdate && AC.holdTime) {
         if (AC.holdTime === '00:00') {
             if (timeNow === '00:00') {
-                pauseUpdatesUntilSave = false;
+                pauseUntilSave = false;
                 switchHoldType('sched');
             }
         } else if (timeNow >= AC.holdTime) {
-            pauseUpdatesUntilSave = false;
+            pauseUntilSave = false;
             switchHoldType('sched');
         }
     }

@@ -79,7 +79,7 @@ def set_thermostat(zone_name, setpoint, mode):
 @app.route('/set_thermostat', methods=['POST'])
 def set_thermostat_route():
     global thermostat
-    new_setpoint = int(request.form['setpoint'])
+    new_setpoint = request.form['setpoint']
     new_mode = request.form['mode']
     current_setpoint = thermostat['setpoint']
     current_mode = thermostat['mode']

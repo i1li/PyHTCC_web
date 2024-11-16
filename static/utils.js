@@ -38,40 +38,20 @@ function isEqual(obj1, obj2, tolerance = 1e-10) {
     }
     return true;
 }
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 function switchHoldType(holdType) {
     AC.holdType = UI.holdType = holdType;
     $(`input[name="hold"][value="${holdType}"]`).prop('checked', true);
-}
-function unsavedWarning() {
-    const warningElement = document.getElementById('warning');
-    const applyElement = document.getElementById('apply');
-    const saveScheduleElement = document.getElementById('save-sched');
-    const warning2Element = document.getElementById('warning2');
-    if (unsavedSettings || unsavedSchedule) {
-        warningElement.style.display = 'block';
-        applyElement.style.border = 'red solid 3px';
-        pauseUntilSave = true;
-    } else if (!unsavedSettings){
-        warningElement.style.display = 'none';
-        applyElement.style.border = 'none';
-    }
-    if (unsavedSchedule) {
-        warning2Element.style.display = 'block';
-        saveScheduleElement.style.border = 'red solid 3px';
-        pauseUntilSave = true;
-    }
-    if (!unsavedSchedule) {
-        warning2Element.style.display = 'none';
-        saveScheduleElement.style.border = 'none';
-    }
-    if (!unsavedSchedule && !unsavedSettings) {
-        pauseUntilSave = false;
-    }
-}
-function hasUIChanged() {
-    const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
-    unsavedSettings = changedProperties.length > 0;
-    unsavedWarning();
 }
 function hasScheduleChanged() {
     const schedUI = schedInfoUI();
@@ -85,34 +65,60 @@ function hasScheduleChanged() {
     unsavedWarning();
     return scheduleChanged;
 }
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-document.addEventListener('DOMContentLoaded', function() {
-    const scheduleDiv = document.getElementById('schedule');
-    scheduleDiv.addEventListener('input change click', debounce(function(event) {
+$(document).ready(function() {
+    $('#schedule').on('input change click', debounce(function(event) {
         hasScheduleChanged();
-    }, 1500));    
+    }, 1500));
+$(window).scroll(debounce(function() {
+    if ($(window).scrollTop() > 160) {
+        document.getElementById("to-top").style.display = "block";
+    } else {
+        document.getElementById("to-top").style.display = "none";
+    }
+}, 200));
 });
-const toTop = document.getElementById("to-top");
-function handleScroll() {
-  if (document.body.scrollTop > 160 || document.documentElement.scrollTop > 160) {
-    toTop.style.display = "block";
-  } else {
-    toTop.style.display = "none";
-  }
-}
-window.addEventListener('scroll', debounce(handleScroll, 200));
 function topFunction() {
   window.scrollTo(0, 0);
+}
+function unsavedWarning() {
+    if (unsavedSettings || unsavedSchedule) {
+        $('#warning').show();
+        $('#apply').css('border', 'red solid 3px');
+        pauseUntilSave = true;
+    } else if (!unsavedSettings) {
+        $('#warning').hide();
+        $('#apply').css('border', 'none');
+    }
+    if (unsavedSchedule) {
+        $('#warning2').show();
+        $('#save-sched').css('border', 'red solid 3px');
+        pauseUntilSave = true;
+    }
+    if (!unsavedSchedule) {
+        $('#warning2').hide();
+        $('#save-sched').css('border', 'none');
+    }
+    if (!unsavedSchedule && !unsavedSettings) {
+        pauseUntilSave = false;
+    }
+}
+function handleInputChange(property, parseAsInt = false) {
+    return function() {
+        UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
+        if (property === 'holdType') handleHoldType();
+        hasUIChanged();
+    };
+}
+$('input[name="mode"]').change(handleInputChange('mode'));
+$('input[name="hold"]').change(handleInputChange('holdType'));
+$('#hold-time').change(handleInputChange('holdTime'));
+$('#setpoint').change(handleInputChange('setpoint', true));
+$('#passive-hys').change(handleInputChange('passiveHys', true));
+$('#active-hys').change(handleInputChange('activeHys', true));
+function hasUIChanged() {
+    const changedProperties = Object.keys(UI).filter(key => UI[key] !== AC[key]);
+    unsavedSettings = changedProperties.length > 0;
+    unsavedWarning();
 }
 function initializeUI() {
     IntervalManager.start();
@@ -129,19 +135,6 @@ function initializeUI() {
         loadSchedule(schedules.currentScheduleName);
     }
 }
-function handleInputChange(property, parseAsInt = false) {
-    return function() {
-        UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
-        if (property === 'holdType') handleHoldType();
-        hasUIChanged();
-    };
-}
-$('input[name="mode"]').change(handleInputChange('mode'));
-$('input[name="hold"]').change(handleInputChange('holdType'));
-$('#hold-time').change(handleInputChange('holdTime'));
-$('#setpoint').change(handleInputChange('setpoint', true));
-$('#passive-hys').change(handleInputChange('passiveHys', true));
-$('#active-hys').change(handleInputChange('activeHys', true));
 function loadState() {
     return fetch('/app_state')
         .then(response => response.json())

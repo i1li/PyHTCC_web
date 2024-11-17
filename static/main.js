@@ -11,7 +11,7 @@ async function updateCycle() {
     try {
         await readThermostat();
         if (!pauseUntilSave) {
-            handleHoldType();
+            manageSchedule();
             V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
             if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
                 setThermostat(V.adjustedSetpoint, AC.mode);
@@ -45,7 +45,7 @@ function handleReading() {
         switchHoldType('temp');
     }
 }
-function handleHoldType() {
+function manageSchedule() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
     const hasSchedule = $('.timeslot').length > 0;

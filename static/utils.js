@@ -111,7 +111,7 @@ function unsavedWarning() {
 function handleInputChange(property, parseAsInt = false) {
     return function() {
         UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
-        if (property === 'holdType') handleHoldType();
+        if (property === 'holdType') manageSchedule();
         hasUIChanged();
     };
 }
@@ -121,8 +121,17 @@ $('#hold-time').change(handleInputChange('holdTime'));
 $('#setpoint').change(handleInputChange('setpoint', true));
 $('#passive-hys').change(handleInputChange('passiveHys', true));
 $('#active-hys').change(handleInputChange('activeHys', true));
+function clearChanges() {
+    initializeUI();
+    unsavedSchedule = unsavedSettings = false;
+    unsavedWarning();
+}
 async function initialize() {
     await loadState();
+    initializeUI();
+    IntervalManager.start();
+}
+function initializeUI () {
     loadScheduleList();
     Object.assign(UI, AC);
     $(`input[name="mode"][value="${UI.mode}"]`).prop('checked', true);
@@ -135,7 +144,6 @@ async function initialize() {
         $('#load-sched').val(schedules.currentScheduleName);
         loadSchedule(schedules.currentScheduleName);
     }
-    IntervalManager.start();
 }
 function loadState() {
     return fetch('/app_state')

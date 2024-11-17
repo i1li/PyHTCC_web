@@ -199,7 +199,7 @@ function readThermostat() {
     return new Promise((resolve, reject) => {
         let timeoutId;
         const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('readThermostat timed out')), 30000);
+            timeoutId = setTimeout(() => reject(new Error('readThermostat timed out')), 50000);
         });
         const updatePromise = fetch('/read_thermostat')
         .then(response => response.json())

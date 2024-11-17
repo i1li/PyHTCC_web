@@ -34,7 +34,7 @@ https://releases.jquery.com/jquery/ -->
 <input type="radio" id="perm" name="hold" value="perm">
 <label for="perm">Permanent Hold</label>
 </div></div>
-<div id="warning"><a class="clear" onclick="clearChanges()">Clear Changes</a>* * * You have unsaved changes * * *</div>
+<div id="warning"><div class="row"><div class="column"><a class="clear" onclick="clearChanges()">Clear Changes</a></div><div class="column"><nobr>* * * You have unsaved changes * * *</nobr></div><div class="column"></div></div></div>
 <div id="temp-hold-info">
 <label for="hold-time">Holds temperature setting above, until schedule resumes at time & temp below:</label>
 <input type="time" id="hold-time" readonly>
@@ -58,7 +58,7 @@ https://releases.jquery.com/jquery/ -->
 <button id="add-timeslot">Add Timeslot</button>
 <button id="clear-sched">Clear Schedule</button>
 <button id="save-sched">Save Schedule</button>
-<center><div id="warning2"><a class="clear" onclick="clearChanges()">Clear Changes</a>* * * You have unsaved changes * * *</div>
+<center><div id="warning2"><div class="row"><div class="column"><a class="clear" onclick="clearChanges()">Clear Changes</a></div><div class="column"><nobr>* * * You have unsaved changes * * *</nobr></div><div class="column"></div></div></div>
 <span onclick="topFunction()" title="Go to top"><img alt="Go to top" class="to-top-img" decoding="async" src="{{ url_for('static', filename='top.png') }}"></span></center>
 <script src="{{ url_for('static', filename='init.js') }}"></script>
 <script src="{{ url_for('static', filename='utils.js') }}"></script>

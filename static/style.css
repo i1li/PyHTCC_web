@@ -5,7 +5,7 @@ button { margin: .5rem 0; padding: .5rem; width: 100%; }
 button:hover, a:hover, .hold-option:hover, .mode-option:hover, .mode-option label, .hold-option label {cursor: pointer; text-decoration: underline; opacity: 0.9; transform: scale(1.05);}
 #current-temp {margin-top:0rem; margin-bottom:0rem; background-image: radial-gradient(circle, #007bff, #dc3545); border-radius:1rem; border: 1px blue solid;}
 #warning, #warning2 {display: none; background-image: linear-gradient(to top, #007bffb8, #dc3546b9, #dc3546); width: 95%; height: 2.2rem; border-radius:.5rem; border: red solid 2px; transition: all 0.7s ease-in-out;}
-.clear {position:absolute; left:1rem; width:5rem; height:1rem;}
+.clear {height:1rem; background-color: #007bff;}
 #hold-time {margin-right: 7%;}
 .mode-container, .hold-container { display: flex; justify-content: space-evenly; }
 .mode-option, .hold-option { width: 30%; }

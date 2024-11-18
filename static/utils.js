@@ -86,12 +86,16 @@ function hasUIChanged() {
     unsavedSettings = changedProperties.length > 0;
     unsavedWarning();
 }
-function unsavedWarning() {
+function unsavedWarning(givenStatus = null) {
+    if (givenStatus !== null) {
+        unsavedSettings = givenStatus;
+        unsavedSchedule = givenStatus;
+    }
     if (unsavedSettings || unsavedSchedule) {
         $('#warning').show();
         $('#apply').css('border', 'red solid 3px');
         pauseUntilSave = true;
-    } else if (!unsavedSettings) {
+    } else {
         $('#warning').hide();
         $('#apply').css('border', 'none');
     }
@@ -99,19 +103,16 @@ function unsavedWarning() {
         $('#warning2').show();
         $('#save-sched').css('border', 'red solid 3px');
         pauseUntilSave = true;
-    }
-    if (!unsavedSchedule) {
+    } else {
         $('#warning2').hide();
         $('#save-sched').css('border', 'none');
     }
-    if (!unsavedSchedule && !unsavedSettings) {
-        pauseUntilSave = false;
-    }
+    pauseUntilSave = unsavedSettings || unsavedSchedule;
 }
 function handleInputChange(property, parseAsInt = false) {
     return function() {
         UI[property] = parseAsInt ? parseInt($(this).val(), 10) : $(this).val();
-        if (property === 'holdType') manageSchedule();
+        if (property === 'holdType') processSchedule();
         hasUIChanged();
     };
 }
@@ -129,7 +130,7 @@ function clearChanges() {
 async function initialize() {
     await loadState();
     initializeUI();
-    IntervalManager.start();
+    go.start();
 }
 function initializeUI () {
     loadScheduleList();

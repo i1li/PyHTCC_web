@@ -11,7 +11,7 @@ async function updateCycle() {
     try {
         await readThermostat();
         if (!pauseUntilSave) {
-            manageSchedule();
+            processSchedule();
             V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
             if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
                 setThermostat(V.adjustedSetpoint, AC.mode);
@@ -38,14 +38,14 @@ function handleReading() {
         AC.mode = UI.mode = thermostat.mode;
         const externalAdjustedSetpoint = hys(thermostat.setpoint, thermostat.mode);
         const adjustmentDifference = externalAdjustedSetpoint - thermostat.setpoint;
-        const reverseAdjustment = externalAdjustedSetpoint - adjustmentDifference;
+        const reverseAdjustment = externalAdjustedSetpoint - adjustmentDifference * 2;
         AC.setpoint = UI.setpoint = reverseAdjustment;
         externalUpdate = true;
         populated = pauseUntilSave = false;
         switchHoldType('temp');
     }
 }
-function manageSchedule() {
+function processSchedule() {
     const timeNow = getTimeNow();
     const hourLater = getHourLater();
     const hasSchedule = $('.timeslot').length > 0;
@@ -107,7 +107,6 @@ function manageSchedule() {
 }
 $('#apply').click(function() {
     Object.assign(AC, UI);
-    unsavedSchedule = unsavedSettings = false;
-    unsavedWarning();
-    IntervalManager.hurry();
+    unsavedWarning(false);
+    go.hurry();
 });

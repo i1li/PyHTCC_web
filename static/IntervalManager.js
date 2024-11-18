@@ -1,52 +1,51 @@
-const IntervalManager = (function() {
-    let lastEventTime = 0;
-    let timeoutId = null;
-    let hurryRequested = false;
-    let repeatHurryRequests = 0;
-    let lastHurryTime = 0;
-    const defaultMinInterval = 50000;
-    const hurryMinInterval = 15000;
-    function scheduleInterval() {
+class IntervalManager {
+    constructor(defaultMinInterval = 50000, hurryInterval = 15000) {
+        this.defaultMinInterval = defaultMinInterval;
+        this.baseHurryInterval = hurryInterval;
+        this.lastEventTime = 0;
+        this.timeoutId = null;
+        this.hurried = false;
+        this.repeatHurryRequests = 0;
+        this.lastHurryTime = 0;
+    }
+    calculateInterval() {
         const now = Date.now();
-        const timeSinceLastEvent = now - lastEventTime;
-        const maxInterval = timeToMinuteStart = 60000 - (now % 60000);
-        let interval;
-        if (hurryRequested) {
-            const hurryInterval = hurryMinInterval * Math.pow(2, repeatHurryRequests);
-            interval = Math.max(hurryInterval - timeSinceLastEvent, 0);
-        } else if (maxInterval >= defaultMinInterval) {
-            interval = maxInterval;
+        const timeSinceLastEvent = now - this.lastEventTime;
+        const nextMinuteStart = 60000 - (now % 60000);
+        if (this.hurried) {
+            const hurryInterval = this.baseHurryInterval * Math.pow(2, this.repeatHurryRequests);
+            return Math.max(hurryInterval - timeSinceLastEvent, 0);
         } else {
-            interval = defaultMinInterval;
+            return Math.max(nextMinuteStart, this.defaultMinInterval);
         }
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(processEvent, interval);
     }
-    function processEvent() {
-        const now = Date.now();
+    scheduleNext() {
+        clearTimeout(this.timeoutId);
+        const interval = this.calculateInterval();
+        this.timeoutId = setTimeout(() => this.processEvent(), interval);
+    }
+    processEvent() {
         updateCycle();
-        lastEventTime = now;
-        hurryRequested = false;
-        repeatHurryRequests = 0;
-        scheduleInterval();
+        this.lastEventTime = Date.now();
+        this.hurried = false;
+        this.repeatHurryRequests = 0;
+        this.scheduleNext();
     }
-    return {
-        start: function() {
-            processEvent();
-        },
-        hurry: function() {
-            const now = Date.now();
-            if (!hurryRequested) {
-                hurryRequested = true;
-                if (now - lastHurryTime < defaultMinInterval) { 
-                    repeatHurryRequests = Math.min(repeatHurryRequests + 1, 2); 
-                } else {
-                    repeatHurryRequests = 0;
-                }
-                lastHurryTime = now;
-                clearTimeout(timeoutId);
-                scheduleInterval();
+    start() {
+        this.processEvent();
+    }
+    hurry() {
+        const now = Date.now();
+        if (!this.hurried) {
+            this.hurried = true;
+            if (now - this.lastHurryTime < this.defaultMinInterval) {
+                this.repeatHurryRequests = Math.min(this.repeatHurryRequests + 1, 2);
+            } else {
+                this.repeatHurryRequests = 0;
             }
+            this.lastHurryTime = now;
+            this.scheduleNext();
         }
-    };
-})();
+    }
+}
+const go = new IntervalManager();

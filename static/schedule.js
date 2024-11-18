@@ -90,10 +90,7 @@ $('#save-sched').click(function() {
         schedules.currentScheduleName = name;
         saveSchedule();
         loadScheduleList();
-        pauseUntilSave = false;
-        unsavedSettings = false;
-        unsavedSchedule = false;
-        unsavedWarning();
+        unsavedWarning(false);
     }
 });
 function loadScheduleList() {
@@ -118,16 +115,13 @@ function loadSchedule(scheduleName) {
             console.error('Invalid schedule format');
         }
         $('#load-sched').val(scheduleName);
-        manageSchedule();
+        processSchedule();
     }
 }
 $('#load-sched').change(function() {
     const selectedSchedule = $(this).val();
     if (selectedSchedule) {
-        pauseUntilSave = true;
-        unsavedSettings = true;
-        unsavedSchedule = true;
-        unsavedWarning();
+        unsavedWarning(true);
         loadSchedule(selectedSchedule);
     }
 });

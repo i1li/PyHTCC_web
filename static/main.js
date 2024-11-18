@@ -78,7 +78,7 @@ function processSchedule() {
         populated = false;
         const sched = schedInfoUI();
         UI.setpoint = sched.scheduledTemp;
-        $('#setpoint').val(AC.setpoint);
+        $('#setpoint').val(UI.setpoint);
         UI.holdTime = sched.nextTimeslot.time;
     } else if (UI.holdType === 'temp') {
         const sched = schedInfoUI();

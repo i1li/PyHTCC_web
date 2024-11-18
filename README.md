@@ -62,4 +62,6 @@ Typical hysteresis is neutral, not differentiating between active & passive, spl
 
 Tracks multiple variables to switch between two different setpoints (active and rest), based on how long the system has been at edges of the range. Minimum and maximum times for running and resting states are also enforced.
 
-Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode. For more: [hysteresis.js](static/hysteresis.js)
+Whether active or rest setpoints differ from "raw" user setpoint, depends on active & passive hysteresis values, & cool/heat mode. 
+
+Runs on assumption that system's fan setting is on "auto", by measuring how long the fan has been in running or off states at the edges of active/rest tolerance ranges. For more: [hysteresis.js](static/hysteresis.js)

@@ -70,7 +70,7 @@ function throttle(func, limit) {
       }
     }
   }  
-function topFunction() {
+function goToTop() {
   window.scrollTo(0, 0);
 }
 function switchHoldType(holdType) {

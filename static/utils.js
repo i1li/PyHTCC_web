@@ -50,6 +50,26 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+function throttle(func, limit) {
+    let lastFunc;
+    let lastRan;
+    return function() {
+      const context = this;
+      const args = arguments;
+      if (!lastRan) {
+        func.apply(context, args);
+        lastRan = Date.now();
+      } else {
+        clearTimeout(lastFunc);
+        lastFunc = setTimeout(function() {
+          if ((Date.now() - lastRan) >= limit) {
+            func.apply(context, args);
+            lastRan = Date.now();
+          }
+        }, Math.max(0, limit - (Date.now() - lastRan)));
+      }
+    }
+  }  
 function topFunction() {
   window.scrollTo(0, 0);
 }
@@ -60,14 +80,14 @@ function switchHoldType(holdType) {
 $(document).ready(function() {
     $('#schedule').on('input change click', debounce(function(event) {
         hasScheduleChanged();
-    }, 1500));
-$(window).scroll(debounce(function() {
-    if ($(window).scrollTop() > 160) {
-        document.getElementById("to-top").style.display = "block";
-    } else {
-        document.getElementById("to-top").style.display = "none";
-    }
-}, 200));
+    }, 2500));
+    $(window).scroll(throttle(function() {
+        if ($(window).scrollTop() > 160) {
+            document.getElementById("to-top").style.display = "block";
+        } else {
+            document.getElementById("to-top").style.display = "none";
+        }
+    }, 250));
 });
 function hasScheduleChanged() {
     const schedUI = schedInfoUI();
@@ -196,25 +216,34 @@ function saveState() {
     } else { console.log('State unchanged.', JSON.stringify(thermostat, null, 2));
         return Promise.resolve(); } 
 }
-function readThermostat() {
+function readThermostat(retries = 3) {
     return new Promise((resolve, reject) => {
-        let timeoutId;
-        const timeoutPromise = new Promise((_, reject) => {
-            timeoutId = setTimeout(() => reject(new Error('readThermostat timed out')), 50000);
-        });
-        const updatePromise = fetch('/read_thermostat')
-        .then(response => response.json())
-        .then(reading => Object.assign(thermostat, reading));
-        Promise.race([updatePromise, timeoutPromise])
-            .then(() => {
-                clearTimeout(timeoutId);
-                handleReading();                
-                resolve();
-            })
-            .catch((error) => {
-                clearTimeout(timeoutId);
-                reject(error);
+        const attemptRead = (attemptsLeft) => {
+            let timeoutId;
+            const timeoutPromise = new Promise((_, reject) => {
+                timeoutId = setTimeout(() => reject(new Error('readThermostat timed out')), 50000);
             });
+            const updatePromise = fetch('/read_thermostat')
+                .then(response => response.json())
+                .then(reading => Object.assign(thermostat, reading));
+            Promise.race([updatePromise, timeoutPromise])
+                .then(() => {
+                    clearTimeout(timeoutId);
+                    handleReading();
+                    resolve();
+                })
+                .catch((error) => {
+                    clearTimeout(timeoutId);
+                    if (attemptsLeft > 1) {
+                        console.log(`Retrying readThermostat. Attempts left: ${attemptsLeft - 1}`);
+                        setTimeout(() => attemptRead(attemptsLeft - 1), 15000);
+                    } else {
+                        console.error('readThermostat failed after all retry attempts');
+                        reject(error);
+                    }
+                });
+        };
+        attemptRead(retries);
     });
 }
 function setThermostat(setpoint, mode) {

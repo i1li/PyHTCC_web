@@ -12,8 +12,10 @@ async function updateCycle() {
         await readThermostat();
         if (!pauseUntilSave) {
             processSchedule();
-            V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
-            if (thermostat.mode != AC.mode || thermostat.setpoint != V.adjustedSetpoint && !unconfirmedUpdate) {
+            if (!unconfirmedUpdate) {
+                V.adjustedSetpoint = hys(AC.setpoint, AC.mode);
+            }
+            if (V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
                 setThermostat(V.adjustedSetpoint, AC.mode);
                 unconfirmedUpdate = true;
                 saveState();
@@ -34,14 +36,14 @@ function handleReading() {
             unsavedWarning();
         }
     } else if (V.adjustedSetpoint == thermostat.setpoint && AC.mode == thermostat.mode && unconfirmedUpdate) { unconfirmedUpdate = externalUpdate = false;
-    } else if (!unconfirmedUpdate && V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
+    } else if (V.adjustedSetpoint != thermostat.setpoint || AC.mode != thermostat.mode) {
         AC.mode = UI.mode = thermostat.mode;
         const externalAdjustedSetpoint = hys(thermostat.setpoint, thermostat.mode);
         const adjustmentDifference = externalAdjustedSetpoint - thermostat.setpoint;
         const reverseAdjustment = externalAdjustedSetpoint - adjustmentDifference * 2;
         AC.setpoint = UI.setpoint = reverseAdjustment;
         externalUpdate = true;
-        populated = pauseUntilSave = false;
+        unconfirmedUpdate = populated = pauseUntilSave = false;
         switchHoldType('temp');
     }
 }

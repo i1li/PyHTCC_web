@@ -9,7 +9,7 @@ function hys(rawSetpoint, mode) {
     const isAtRestSetpoint = thermostat.temp === V.restSetpoint;
     V.restingFor = V.restingSince ? now - V.restingSince : 0;
     V.restingAtEdgeFor = V.restingAtEdgeSince ? now - V.restingAtEdgeSince : 0;
-    const isInRestRange = isCooling ? () => thermostat.temp >= rawSetpoint - AC.activeHys : () => thermostat.temp <= rawSetpoint + AC.activeHys;
+    const isInRestRange = isCooling ? () => thermostat.temp <= rawSetpoint + AC.passiveHys : () => thermostat.temp >= rawSetpoint - AC.passiveHys;
     if (thermostat.running) {
         V.resting = false;
         V.restingSince = null;

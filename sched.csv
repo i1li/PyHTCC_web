@@ -1,0 +1,5 @@
+time,mode,setpoint,fan_mode
+19:50,,,on
+20:00,cool,run,
+05:59,cool,rest,
+06:20,,,auto

@@ -20,7 +20,7 @@ let settings = AC = {
 };
 const advancedSettings = {
     runAtEdgeMinTime: 5,
-    restAtEdgeMaxTime: 8.5,
+    restAtEdgeMaxTime: 7,
     runMaxTime: 25,
     restMaxTime: 50,
     quickRestMaxTime: 5
